@@ -1,0 +1,1 @@
+// COLOCAR AQUI O CÓDIGO DO ARQUIVO sensor-device.js
