@@ -25,8 +25,10 @@ import java.util.concurrent.locks.ReentrantLock;
 @Service
 public class ArduinoService {
 
-    @Value("${ble.device-name}")
-    private String nomeDispositivo;
+
+
+    @Value("${ble.device-address}")
+    private String deviceAddress;
 
     @Value("${ble.adapter:hci0}")
     private String adapter;
@@ -34,162 +36,514 @@ public class ArduinoService {
     @Value("${ble.service-uuid}")
     private String serviceUuid;
 
-    @Value("${ble.tx-characteristic-uuid}")
-    private String txUuid;
-
-    @Value("${ble.rx-characteristic-uuid}")
-    private String rxUuid;
+    @Value("${ble.characteristic-uuid}")
+    private String characteristicUuid;
 
     @Value("${ble.scan-timeout-ms:10000}")
     private long scanTimeoutMs;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    @Value("${ble.response-timeout-ms:5000}")
+    private long responseTimeoutMs;
+
 
     private DeviceManager deviceManager;
+
     private volatile BluetoothDevice device;
-    private volatile BluetoothGattCharacteristic txCharacteristic; // notify: Arduino -> Java
-    private volatile BluetoothGattCharacteristic rxCharacteristic; // write:  Java -> Arduino
 
-    // Fila que recebe as notificações da characteristic TX, uma por vez
-    private final BlockingQueue<String> filaRespostas = new LinkedBlockingQueue<>();
+    private volatile BluetoothGattCharacteristic characteristic;
 
-    // Garante que só um comando por vez esteja "em voo" (evita misturar respostas)
-    private final ReentrantLock lock = new ReentrantLock();
+
+    private final BlockingQueue<String> filaRespostas =
+            new LinkedBlockingQueue<>();
+
+    private final ReentrantLock lock =
+            new ReentrantLock();
+
+
+    private final ObjectMapper mapper =
+            new ObjectMapper();
+
 
     @PostConstruct
     public void iniciar() throws Exception {
-        deviceManager = DeviceManager.createInstance(false); // system bus, onde o BlueZ roda
+
+        System.out.println("[Arduino BLE] Inicializando...");
+
+        deviceManager = DeviceManager.createInstance(false);
+
         conectar();
-        System.out.println("[Arduino BLE] Conectado a " + nomeDispositivo);
-    }
 
-    private void conectar() throws Exception {
-        device = localizarDispositivo();
-        if (device == null) {
-            throw new IllegalStateException("Dispositivo BLE '" + nomeDispositivo + "' não encontrado.");
-        }
-
-        if (!device.isConnected()) {
-            device.connect();
-        }
-
-        BluetoothGattService servico = aguardarServico(device, serviceUuid, 5000);
-        if (servico == null) {
-            throw new IllegalStateException("Serviço GATT " + serviceUuid + " não encontrado.");
-        }
-
-        txCharacteristic = localizarCaracteristica(servico, txUuid);
-        rxCharacteristic = localizarCaracteristica(servico, rxUuid);
-
-        if (txCharacteristic == null || rxCharacteristic == null) {
-            throw new IllegalStateException("Características TX/RX não encontradas no serviço GATT.");
-        }
-
-        registrarNotificacoes();
-        txCharacteristic.startNotify();
-    }
-
-    private BluetoothDevice localizarDispositivo() {
-        List<BluetoothDevice> conhecidos = deviceManager.getDevices();
-        BluetoothDevice existente = conhecidos.stream()
-                .filter(d -> nomeDispositivo.equals(d.getName()))
-                .findFirst()
-                .orElse(null);
-        if (existente != null) {
-            return existente;
-        }
-
-        List<BluetoothDevice> escaneados = deviceManager.scanForBluetoothDevices(adapter, (int) scanTimeoutMs);
-        return escaneados.stream()
-                .filter(d -> nomeDispositivo.equals(d.getName()))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private BluetoothGattService aguardarServico(BluetoothDevice dev, String uuid, long timeoutMs) throws InterruptedException {
-        long limite = System.currentTimeMillis() + timeoutMs;
-        BluetoothGattService servico = buscarServico(dev, uuid);
-        while (servico == null && System.currentTimeMillis() < limite) {
-            Thread.sleep(300);
-            servico = buscarServico(dev, uuid);
-        }
-        return servico;
-    }
-
-    private BluetoothGattService buscarServico(BluetoothDevice dev, String uuid) {
-        List<BluetoothGattService> servicos = dev.getGattServices();
-        if (servicos == null) return null;
-        return servicos.stream()
-                .filter(s -> uuid.equalsIgnoreCase(s.getUuid()))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private BluetoothGattCharacteristic localizarCaracteristica(BluetoothGattService servico, String uuid) {
-        List<BluetoothGattCharacteristic> caracteristicas = servico.getGattCharacteristics();
-        if (caracteristicas == null) return null;
-        return caracteristicas.stream()
-                .filter(c -> uuid.equalsIgnoreCase(c.getUuid()))
-                .findFirst()
-                .orElse(null);
-    }
-
-    // Substitui a "thread lendo BufferedReader" do serial: aqui a notificação
-    // chega de forma assíncrona via sinal D-Bus, então empurramos pra fila.
-    private void registrarNotificacoes() throws org.freedesktop.dbus.exceptions.DBusException {
-        deviceManager.getDbusConnection().addSigHandler(
-                Properties.PropertiesChanged.class,
-                (Properties.PropertiesChanged sinal) -> {
-                    if (txCharacteristic == null) return;
-                    if (!"org.bluez.GattCharacteristic1".equals(sinal.getInterfaceName())) return;
-                    if (!sinal.getPath().equals(txCharacteristic.getDbusPath())) return;
-
-                    Variant<?> valor = sinal.getPropertiesChanged().get("Value");
-                    if (valor != null && valor.getValue() instanceof byte[] bytes) {
-                        String linha = new String(bytes, StandardCharsets.UTF_8).trim();
-                        if (!linha.isBlank()) {
-                            filaRespostas.offer(linha);
-                        }
-                    }
-                }
+        System.out.println(
+                "[Arduino BLE] Conectado ao dispositivo "
+                        + deviceAddress
         );
     }
 
-    // Mesmo contrato de antes: envia o comando e ESPERA a resposta
-    public RespostaArduino enviarEEsperarResposta(ComandoArduino comando, long timeoutMs) throws Exception {
+
+    private void conectar() throws Exception {
+
+        System.out.println(
+                "[Arduino BLE] Procurando dispositivo: "
+                        + deviceAddress
+        );
+
+        device = localizarDispositivo();
+
+        if (device == null) {
+
+            throw new IllegalStateException(
+                    "Dispositivo BLE não encontrado: "
+                            + deviceAddress
+            );
+        }
+
+        System.out.println(
+                "[Arduino BLE] Dispositivo encontrado: "
+                        + device.getAddress()
+        );
+
+
+        if (!device.isConnected()) {
+
+            System.out.println(
+                    "[Arduino BLE] Conectando..."
+            );
+
+            device.connect();
+        }
+
+        System.out.println(
+                "[Arduino BLE] Conexão estabelecida."
+        );
+
+
+        BluetoothGattService service =
+                aguardarServico(
+                        device,
+                        serviceUuid,
+                        5000
+                );
+
+        if (service == null) {
+
+            throw new IllegalStateException(
+                    "Serviço GATT não encontrado: "
+                            + serviceUuid
+            );
+        }
+
+        System.out.println(
+                "[Arduino BLE] Serviço encontrado: "
+                        + service.getUuid()
+        );
+
+        characteristic = localizarCaracteristica(
+                        service,
+                        characteristicUuid
+                );
+
+        if (characteristic == null) {
+
+            throw new IllegalStateException(
+                    "Característica GATT não encontrada: "
+                            + characteristicUuid
+            );
+        }
+
+        System.out.println(
+                "[Arduino BLE] Característica encontrada: "
+                        + characteristic.getUuid()
+        );
+
+
+        registrarNotificacoes();
+
+        characteristic.startNotify();
+
+        System.out.println(
+                "[Arduino BLE] Notificações ativadas."
+        );
+    }
+
+    private BluetoothDevice localizarDispositivo() {
+
+
+        List<BluetoothDevice> conhecidos =
+                deviceManager.getDevices();
+
+        BluetoothDevice existente =
+                conhecidos.stream()
+                        .filter(d ->
+                                deviceAddress.equalsIgnoreCase(
+                                        d.getAddress()
+                                )
+                        )
+                        .findFirst()
+                        .orElse(null);
+
+        if (existente != null) {
+
+            System.out.println(
+                    "[Arduino BLE] Dispositivo encontrado "
+                            + "entre os dispositivos conhecidos."
+            );
+
+            return existente;
+        }
+
+        System.out.println(
+                "[Arduino BLE] Dispositivo não encontrado "
+                        + "na lista conhecida. Iniciando scan..."
+        );
+
+        List<BluetoothDevice> escaneados =
+                deviceManager.scanForBluetoothDevices(
+                        adapter,
+                        (int) scanTimeoutMs
+                );
+
+
+        // --------------------------------------------------------
+        // 3. Procura pelo MAC
+        // --------------------------------------------------------
+
+        return escaneados.stream()
+                .filter(d ->
+                        deviceAddress.equalsIgnoreCase(
+                                d.getAddress()
+                        )
+                )
+                .findFirst()
+                .orElse(null);
+    }
+
+
+    // ============================================================
+    // AGUARDAR SERVIÇO GATT
+    // ============================================================
+
+    private BluetoothGattService aguardarServico(
+            BluetoothDevice device,
+            String uuid,
+            long timeoutMs
+    ) throws InterruptedException {
+
+        long limite =
+                System.currentTimeMillis() + timeoutMs;
+
+        BluetoothGattService service =
+                buscarServico(device, uuid);
+
+        while (
+                service == null
+                        &&
+                        System.currentTimeMillis() < limite
+        ) {
+
+            Thread.sleep(300);
+
+            service =
+                    buscarServico(
+                            device,
+                            uuid
+                    );
+        }
+
+        return service;
+    }
+
+
+    // ============================================================
+    // BUSCAR SERVIÇO
+    // ============================================================
+
+    private BluetoothGattService buscarServico(
+            BluetoothDevice device,
+            String uuid
+    ) {
+
+        List<BluetoothGattService> services =
+                device.getGattServices();
+
+        if (services == null) {
+            return null;
+        }
+
+        return services.stream()
+                .filter(service ->
+                        uuid.equalsIgnoreCase(
+                                service.getUuid()
+                        )
+                )
+                .findFirst()
+                .orElse(null);
+    }
+
+
+    // ============================================================
+    // BUSCAR CARACTERÍSTICA
+    // ============================================================
+
+    private BluetoothGattCharacteristic localizarCaracteristica(
+            BluetoothGattService service,
+            String uuid
+    ) {
+
+        List<BluetoothGattCharacteristic> characteristics =
+                service.getGattCharacteristics();
+
+        if (characteristics == null) {
+            return null;
+        }
+
+        return characteristics.stream()
+                .filter(characteristic ->
+                        uuid.equalsIgnoreCase(
+                                characteristic.getUuid()
+                        )
+                )
+                .findFirst()
+                .orElse(null);
+    }
+
+
+    // ============================================================
+    // NOTIFICAÇÕES
+    // ============================================================
+
+    private void registrarNotificacoes()
+            throws org.freedesktop.dbus.exceptions.DBusException {
+
+        deviceManager
+                .getDbusConnection()
+                .addSigHandler(
+                        Properties.PropertiesChanged.class,
+                        sinal -> {
+
+                            if (characteristic == null) {
+                                return;
+                            }
+
+                            if (
+                                    !"org.bluez.GattCharacteristic1"
+                                            .equals(
+                                                    sinal.getInterfaceName()
+                                            )
+                            ) {
+                                return;
+                            }
+
+                            if (
+                                    !sinal.getPath()
+                                            .equals(
+                                                    characteristic
+                                                            .getDbusPath()
+                                            )
+                            ) {
+                                return;
+                            }
+
+
+                            Variant<?> valor =
+                                    sinal.getPropertiesChanged()
+                                            .get("Value");
+
+                            if (valor == null) {
+                                return;
+                            }
+
+
+                            Object valorRecebido =
+                                    valor.getValue();
+
+                            if (
+                                    !(valorRecebido instanceof byte[] bytes)
+                            ) {
+                                return;
+                            }
+
+
+                            String mensagem =
+                                    new String(
+                                            bytes,
+                                            StandardCharsets.UTF_8
+                                    ).trim();
+
+
+                            if (mensagem.isBlank()) {
+                                return;
+                            }
+
+
+                            System.out.println(
+                                    "[Arduino BLE] <- "
+                                            + mensagem
+                            );
+
+
+                            filaRespostas.offer(
+                                    mensagem
+                            );
+                        }
+                );
+    }
+
+
+    // ============================================================
+    // ENVIAR COMANDO
+    // ============================================================
+
+    public RespostaArduino enviarEEsperarResposta(
+            ComandoArduino comando
+    ) throws Exception {
+
+        return enviarEEsperarResposta(
+                comando,
+                responseTimeoutMs
+        );
+    }
+
+
+    // ============================================================
+    // ENVIAR E ESPERAR
+    // ============================================================
+
+    public RespostaArduino enviarEEsperarResposta(
+            ComandoArduino comando,
+            long timeoutMs
+    ) throws Exception {
+
         lock.lock();
+
         try {
+
             garantirConectado();
-            filaRespostas.clear(); // descarta qualquer notificação pendente
 
-            String json = mapper.writeValueAsString(comando);
-            rxCharacteristic.writeValue(json.getBytes(StandardCharsets.UTF_8), Collections.emptyMap());
+            filaRespostas.clear();
 
-            String respostaJson = filaRespostas.poll(timeoutMs, TimeUnit.MILLISECONDS);
+
+            // ----------------------------------------------------
+            // Transformar objeto em JSON
+            // ----------------------------------------------------
+
+            String json =
+                    mapper.writeValueAsString(
+                            comando
+                    );
+
+
+            System.out.println(
+                    "[Arduino BLE] -> "
+                            + json
+            );
+
+
+            // ----------------------------------------------------
+            // Enviar JSON para Arduino
+            // ----------------------------------------------------
+
+            byte[] dados =
+                    json.getBytes(
+                            StandardCharsets.UTF_8
+                    );
+
+
+            characteristic.writeValue(
+                    dados,
+                    Collections.emptyMap()
+            );
+
+
+            // ----------------------------------------------------
+            // Esperar resposta
+            // ----------------------------------------------------
+
+            String respostaJson =
+                    filaRespostas.poll(
+                            timeoutMs,
+                            TimeUnit.MILLISECONDS
+                    );
+
+
             if (respostaJson == null) {
-                throw new RuntimeException("Timeout: Arduino não respondeu a tempo");
+
+                throw new RuntimeException(
+                        "Timeout: Arduino não respondeu em "
+                                + timeoutMs
+                                + " ms"
+                );
             }
 
-            return mapper.readValue(respostaJson, RespostaArduino.class);
+
+            // ----------------------------------------------------
+            // Converter JSON para DTO
+            // ----------------------------------------------------
+
+            return mapper.readValue(
+                    respostaJson,
+                    RespostaArduino.class
+            );
+
         } finally {
+
             lock.unlock();
         }
     }
 
-    private void garantirConectado() throws Exception {
-        if (device == null || !device.isConnected() || txCharacteristic == null || rxCharacteristic == null) {
+
+    // ============================================================
+    // GARANTIR CONEXÃO
+    // ============================================================
+
+    private void garantirConectado()
+            throws Exception {
+
+        if (
+                device == null
+                        ||
+                        !device.isConnected()
+                        ||
+                        characteristic == null
+        ) {
+
+            System.out.println(
+                    "[Arduino BLE] Conexão perdida. "
+                            + "Reconectando..."
+            );
+
             conectar();
         }
     }
 
+
+    // ============================================================
+    // DESCONECTAR
+    // ============================================================
+
     @PreDestroy
     public void encerrar() {
+
         try {
-            if (device != null && device.isConnected()) {
+
+            if (
+                    device != null
+                            &&
+                            device.isConnected()
+            ) {
+
+                System.out.println(
+                        "[Arduino BLE] Desconectando..."
+                );
+
                 device.disconnect();
             }
+
         } catch (Exception e) {
-            System.out.println("[Arduino BLE] Erro ao desconectar: " + e.getMessage());
+
+            System.out.println(
+                    "[Arduino BLE] Erro ao desconectar: "
+                            + e.getMessage()
+            );
         }
     }
 }
