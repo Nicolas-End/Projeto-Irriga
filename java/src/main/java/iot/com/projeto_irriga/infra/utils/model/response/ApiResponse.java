@@ -1,4 +1,4 @@
-package iot.com.projeto_irriga.utils.response;
+package iot.com.projeto_irriga.infra.utils.model.response;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -21,9 +21,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-
-@Service
-public class ArduinoService {
+//@Service
+public class ArduinoBluetooth {
 
 
 
@@ -46,17 +45,12 @@ public class ArduinoService {
     private long responseTimeoutMs;
 
 
-
     private DeviceManager deviceManager;
 
     private volatile BluetoothDevice device;
 
     private volatile BluetoothGattCharacteristic characteristic;
 
-
-    // ============================================================
-    // CONTROLE DE RESPOSTAS
-    // ============================================================
 
     private final BlockingQueue<String> filaRespostas =
             new LinkedBlockingQueue<>();
@@ -65,17 +59,9 @@ public class ArduinoService {
             new ReentrantLock();
 
 
-    // ============================================================
-    // JSON
-    // ============================================================
-
     private final ObjectMapper mapper =
             new ObjectMapper();
 
-
-    // ============================================================
-    // INICIALIZAÇÃO
-    // ============================================================
 
     @PostConstruct
     public void iniciar() throws Exception {
@@ -92,10 +78,6 @@ public class ArduinoService {
         );
     }
 
-
-    // ============================================================
-    // CONEXÃO
-    // ============================================================
 
     private void conectar() throws Exception {
 
@@ -120,10 +102,6 @@ public class ArduinoService {
         );
 
 
-        // --------------------------------------------------------
-        // CONECTAR
-        // --------------------------------------------------------
-
         if (!device.isConnected()) {
 
             System.out.println(
@@ -137,10 +115,6 @@ public class ArduinoService {
                 "[Arduino BLE] Conexão estabelecida."
         );
 
-
-        // --------------------------------------------------------
-        // SERVIÇO
-        // --------------------------------------------------------
 
         BluetoothGattService service =
                 aguardarServico(
@@ -162,13 +136,7 @@ public class ArduinoService {
                         + service.getUuid()
         );
 
-
-        // --------------------------------------------------------
-        // CARACTERÍSTICA
-        // --------------------------------------------------------
-
-        characteristic =
-                localizarCaracteristica(
+        characteristic = localizarCaracteristica(
                         service,
                         characteristicUuid
                 );
@@ -187,10 +155,6 @@ public class ArduinoService {
         );
 
 
-        // --------------------------------------------------------
-        // NOTIFICAÇÕES
-        // --------------------------------------------------------
-
         registrarNotificacoes();
 
         characteristic.startNotify();
@@ -200,16 +164,8 @@ public class ArduinoService {
         );
     }
 
-
-    // ============================================================
-    // LOCALIZAR DISPOSITIVO
-    // ============================================================
-
     private BluetoothDevice localizarDispositivo() {
 
-        // --------------------------------------------------------
-        // 1. Primeiro verifica dispositivos já conhecidos
-        // --------------------------------------------------------
 
         List<BluetoothDevice> conhecidos =
                 deviceManager.getDevices();
@@ -233,11 +189,6 @@ public class ArduinoService {
 
             return existente;
         }
-
-
-        // --------------------------------------------------------
-        // 2. Caso não esteja na lista, faz scan
-        // --------------------------------------------------------
 
         System.out.println(
                 "[Arduino BLE] Dispositivo não encontrado "
@@ -563,6 +514,10 @@ public class ArduinoService {
         }
     }
 
+
+    // ============================================================
+    // DESCONECTAR
+    // ============================================================
 
     @PreDestroy
     public void encerrar() {
