@@ -33,6 +33,4 @@ public class BombaEntity extends EntityModel {
     private ModeloBomba modeloBomba;
 
 
-
-
 }
