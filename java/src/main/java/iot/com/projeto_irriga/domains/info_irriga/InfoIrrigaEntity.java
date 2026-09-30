@@ -5,11 +5,15 @@ import iot.com.projeto_irriga.domains.usuario.UsuarioEntity;
 import iot.com.projeto_irriga.enums.info_irriga.TipoConfiguacao;
 import iot.com.projeto_irriga.infra.utils.model.EntityModel;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "tb_info_irriga")
+@Getter
+@Setter
 public class InfoIrrigaEntity extends EntityModel {
 
     @Id

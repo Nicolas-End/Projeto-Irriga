@@ -5,12 +5,16 @@ import iot.com.projeto_irriga.domains.bomba.BombaEntity;
 import iot.com.projeto_irriga.domains.usuario.UsuarioEntity;
 import iot.com.projeto_irriga.infra.utils.model.EntityModel;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Date;
 import java.util.UUID;
 
 @Entity
 @Table(name= "tb_consumo_agua")
+@Getter
+@Setter
 public class ConsumoAguaEntity extends EntityModel {
 
     @Id

@@ -5,6 +5,7 @@ import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import iot.com.projeto_irriga.infra.utils.scheduler.ArduinoSchedulers;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,7 +25,8 @@ public class ArduinoController {
     }
 
 
-    @GetMapping("/get/all-infos")
+
+    @GetMapping("/all-infos")
     public ResponseEntity<ApiResponse> getAllInfos(){
         ArduinoSchedulers.SET_IRRIGATION_SCHEDULE(3, TimeUnit.SECONDS);
 

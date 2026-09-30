@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
-@Service
+/*@Service
 public class ArduinoService {
 
     private final ResponseUtil responseUtil;
@@ -23,7 +23,7 @@ public class ArduinoService {
 
 
 
-    private ResponseEntity<ApiResponse> mandarMenssage(ComandoArduino comando) {
+    private ResponseEntity<ApiResponse> git(ComandoArduino comando) {
         try {
             ArduinoBluetooth servico;
             RespostaArduino resposta = this.blServico.enviarEEsperarResposta(comando, 3000);
@@ -38,4 +38,4 @@ public class ArduinoService {
             return ResponseEntity.status(apiResponse.getStatus()).body(apiResponse);
         }
     }
-}
+}*/
