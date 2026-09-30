@@ -17,11 +17,7 @@ public class ArduinoSchedulers {
 
     @PostConstruct
     public static void INIT(){
-        IRRIGATION_SCHEDULE = Executors.newScheduledThreadPool(1);
 
-        IRRIGATION_SCHEDULE.scheduleAtFixedRate(() ->{
-            System.out.println("Teste");
-        },0,2, TimeUnit.SECONDS);
 
 
 

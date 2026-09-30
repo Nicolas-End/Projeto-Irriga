@@ -3,6 +3,7 @@ package iot.com.projeto_irriga.domains.arduino;
 import iot.com.projeto_irriga.dto.arduino.ComandoArduino;
 import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import iot.com.projeto_irriga.enums.arduino.StatusResposta;
+import iot.com.projeto_irriga.enums.arduino.TiposComandos;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import org.springframework.http.HttpStatus;
@@ -20,12 +21,14 @@ public class ArduinoService {
         this.blServico = blServico;
     }
 
-
+    public ResponseEntity teste(){
+        return this.mandarMenssage(new ComandoArduino(TiposComandos.INFORMATIVO,"TEste"));
+    }
 
 
     private ResponseEntity<ApiResponse> git(ComandoArduino comando) {
         try {
-            ArduinoBluetooth servico;
+
             RespostaArduino resposta = this.blServico.enviarEEsperarResposta(comando, 3000);
             if(resposta.status().equals(StatusResposta.OK)) {
                 ApiResponse apiResponse = this.responseUtil.sucess(resposta, resposta.message(), HttpStatus.OK);

@@ -342,7 +342,6 @@ public class ArduinoBluetooth {
                                 return;
                             }
 
-
                             Variant<?> valor =
                                     sinal.getPropertiesChanged()
                                             .get("Value");
@@ -351,16 +350,37 @@ public class ArduinoBluetooth {
                                 return;
                             }
 
-
                             Object valorRecebido =
                                     valor.getValue();
 
-                            if (
-                                    !(valorRecebido instanceof byte[] bytes)
+                            byte[] bytes;
+
+                            if (valorRecebido instanceof byte[] b) {
+
+                                bytes = b;
+
+                            } else if (
+                                    valorRecebido instanceof java.util.List<?> lista
                             ) {
+
+                                bytes = new byte[lista.size()];
+
+                                for (int i = 0; i < lista.size(); i++) {
+
+                                    bytes[i] =
+                                            ((Number) lista.get(i))
+                                                    .byteValue();
+                                }
+
+                            } else {
+
+                                System.out.println(
+                                        "Tipo de Value não suportado: "
+                                                + valorRecebido.getClass()
+                                );
+
                                 return;
                             }
-
 
                             String mensagem =
                                     new String(
@@ -368,26 +388,48 @@ public class ArduinoBluetooth {
                                             StandardCharsets.UTF_8
                                     ).trim();
 
-
                             if (mensagem.isBlank()) {
                                 return;
                             }
-
 
                             System.out.println(
                                     "[Arduino BLE] <- "
                                             + mensagem
                             );
 
+                            synchronized (bufferResposta) {
 
-                            filaRespostas.offer(
-                                    mensagem
-                            );
+                                bufferResposta.append(mensagem);
+
+                                String respostaCompleta =
+                                        bufferResposta.toString();
+
+                                if (
+                                        respostaCompleta.startsWith("{")
+                                                && respostaCompleta.endsWith("}")
+                                ) {
+
+                                    System.out.println(
+                                            "[Arduino BLE] <- RESPOSTA COMPLETA: "
+                                                    + respostaCompleta
+                                    );
+
+                                    filaRespostas.offer(
+                                            respostaCompleta
+                                    );
+
+                                    bufferResposta.setLength(0);
+
+                                    System.out.println(
+                                            "Resposta completa colocada na fila!"
+                                    );
+                                }
+                            }
                         }
                 );
     }
-
-
+    private final StringBuilder bufferResposta =
+            new StringBuilder();
     // ============================================================
     // ENVIAR COMANDO
     // ============================================================
@@ -420,6 +462,9 @@ public class ArduinoBluetooth {
 
             filaRespostas.clear();
 
+            synchronized (bufferResposta) {
+                bufferResposta.setLength(0);
+            }
 
             // ----------------------------------------------------
             // Transformar objeto em JSON
@@ -464,7 +509,7 @@ public class ArduinoBluetooth {
                     );
 
 
-            if (respostaJson == null) {
+                if (respostaJson == null) {
 
                 throw new RuntimeException(
                         "Timeout: Arduino não respondeu em "
@@ -477,6 +522,11 @@ public class ArduinoBluetooth {
             // ----------------------------------------------------
             // Converter JSON para DTO
             // ----------------------------------------------------
+
+            System.out.println(
+                    "[Arduino BLE] JSON recebido para conversão: "
+                            + respostaJson
+            );
 
             return mapper.readValue(
                     respostaJson,
