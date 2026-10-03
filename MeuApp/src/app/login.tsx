@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 import {
@@ -56,15 +57,18 @@ export default function Login() {
 
       switch (error.code) {
         case 'auth/invalid-email':
-          mensagem = 'O e-mail informado é inválido.';
+          mensagem =
+            'O e-mail informado é inválido.';
           break;
 
         case 'auth/invalid-credential':
-          mensagem = 'E-mail ou senha incorretos.';
+          mensagem =
+            'E-mail ou senha incorretos.';
           break;
 
         case 'auth/user-disabled':
-          mensagem = 'Este usuário foi desativado.';
+          mensagem =
+            'Este usuário foi desativado.';
           break;
 
         case 'auth/too-many-requests':
@@ -87,6 +91,10 @@ export default function Login() {
     }
   }
 
+  function abrirCadastro() {
+    router.push('/cadastro');
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -97,6 +105,7 @@ export default function Login() {
       }
     >
       <View style={styles.content}>
+
         {/* LOGO */}
 
         <View style={styles.logoContainer}>
@@ -107,24 +116,29 @@ export default function Login() {
           />
         </View>
 
+        {/* TÍTULO */}
+
         <Text style={styles.title}>
           Projeto Irriga
         </Text>
 
         <Text style={styles.subtitle}>
-          Acesse sua conta para gerenciar seu sistema de irrigação.
+          Acesse sua conta para gerenciar seu
+          sistema de irrigação.
         </Text>
 
         {/* FORMULÁRIO */}
 
         <View style={styles.form}>
-          {/* EMAIL */}
+
+          {/* E-MAIL */}
 
           <Text style={styles.label}>
             E-mail
           </Text>
 
           <View style={styles.inputContainer}>
+
             <MaterialCommunityIcons
               name="email-outline"
               size={21}
@@ -142,6 +156,7 @@ export default function Login() {
               autoCorrect={false}
               editable={!carregando}
             />
+
           </View>
 
           {/* SENHA */}
@@ -151,6 +166,7 @@ export default function Login() {
           </Text>
 
           <View style={styles.inputContainer}>
+
             <MaterialCommunityIcons
               name="lock-outline"
               size={21}
@@ -173,7 +189,7 @@ export default function Login() {
               disabled={carregando}
               onPress={() =>
                 setMostrarSenha(
-                  (valor) => !valor
+                  valor => !valor
                 )
               }
             >
@@ -187,6 +203,7 @@ export default function Login() {
                 color="#94A3B8"
               />
             </Pressable>
+
           </View>
 
           {/* ESQUECI A SENHA */}
@@ -200,31 +217,30 @@ export default function Login() {
             </Text>
           </Pressable>
 
-          {/* ENTRAR */}
+          {/* BOTÃO ENTRAR */}
 
           <Pressable
             disabled={carregando}
             style={({ pressed }) => [
               styles.loginButton,
+
               pressed &&
                 !carregando &&
                 styles.buttonPressed,
+
               carregando &&
                 styles.buttonDisabled,
             ]}
             onPress={fazerLogin}
           >
+
             {carregando ? (
               <ActivityIndicator
                 color="#FFFFFF"
               />
             ) : (
               <>
-                <Text
-                  style={
-                    styles.loginButtonText
-                  }
-                >
+                <Text style={styles.loginButtonText}>
                   Entrar
                 </Text>
 
@@ -235,28 +251,35 @@ export default function Login() {
                 />
               </>
             )}
+
           </Pressable>
 
-          {/* CADASTRO */}
+          {/* CRIAR CONTA */}
 
           <View style={styles.registerContainer}>
+
             <Text style={styles.registerText}>
               Ainda não possui uma conta?
             </Text>
 
             <Pressable
               disabled={carregando}
-              onPress={() =>
-                router.push('./cadastro')
-              }
+              onPress={abrirCadastro}
+              style={({ pressed }) => [
+                styles.registerButtonContainer,
+                pressed &&
+                  styles.registerButtonPressed,
+              ]}
             >
-              <Text
-                style={styles.registerButton}
-              >
+
+              <Text style={styles.registerButton}>
                 Criar conta
               </Text>
+
             </Pressable>
+
           </View>
+
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -264,6 +287,7 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
@@ -355,6 +379,7 @@ const styles = StyleSheet.create({
 
   forgotButton: {
     alignSelf: 'flex-end',
+
     marginTop: 12,
   },
 
@@ -398,26 +423,38 @@ const styles = StyleSheet.create({
   },
 
   registerContainer: {
-    flexDirection: 'row',
-
-    justifyContent: 'center',
     alignItems: 'center',
 
-    marginTop: 24,
+    justifyContent: 'center',
 
-    gap: 5,
+    marginTop: 26,
+
+    paddingBottom: 10,
   },
 
   registerText: {
     color: '#94A3B8',
 
-    fontSize: 13,
+    fontSize: 14,
+
+    marginBottom: 5,
+  },
+
+  registerButtonContainer: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+
+  registerButtonPressed: {
+    opacity: 0.6,
   },
 
   registerButton: {
     color: '#22C55E',
 
-    fontSize: 13,
+    fontSize: 15,
+
     fontWeight: 'bold',
   },
+
 });
