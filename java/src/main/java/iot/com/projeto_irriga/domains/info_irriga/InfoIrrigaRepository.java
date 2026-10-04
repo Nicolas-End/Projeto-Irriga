@@ -7,4 +7,7 @@ import java.util.UUID;
 
 @EnableJpaRepositories
 public interface InfoIrrigaRepository extends JpaRepository<InfoIrrigaEntity, UUID> {
+
+    InfoIrrigaEntity findFirstByOrderByIdAsc();
+
 }

@@ -1,5 +1,9 @@
 package iot.com.projeto_irriga.domains.consumo_agua;
 
+import iot.com.projeto_irriga.domains.bomba.BombaEntity;
+import iot.com.projeto_irriga.domains.bomba.BombaService;
+import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaEntity;
+import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaService;
 import iot.com.projeto_irriga.dto.consumo_agua.ConsumoAguaTotalDTO;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
@@ -15,8 +19,12 @@ public class ConsumoAguaService {
 
     private final ResponseUtil responseUtil;
     private final ConsumoAguaRepository consumoAguaRepository;
-    public  ConsumoAguaService( ResponseUtil responseUtil, ConsumoAguaRepository consumoAguaRepository){
+    private final InfoIrrigaService infoIrrigaService;
+    private final BombaService bombaService;
+    public  ConsumoAguaService(BombaService bombaService,ResponseUtil responseUtil, ConsumoAguaRepository consumoAguaRepository, InfoIrrigaService infoIrrigaService){
         this.responseUtil = responseUtil;
+        this.bombaService = bombaService;
+        this.infoIrrigaService = infoIrrigaService;
         this.consumoAguaRepository = consumoAguaRepository;
     }
 
@@ -47,11 +55,15 @@ public class ConsumoAguaService {
 
     public ApiResponse addConsumoAgua(int vezesIrrigadas){
 
+        InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaService.getFirstInfoIrrigaEntity();
+        BombaEntity bomba = this.bombaService.getFirstBombaEntity();
+
+
+
         List<ConsumoAguaEntity> consumoAguaEntities = new ArrayList<ConsumoAguaEntity>();
 
         for(int i =  1; i == vezesIrrigadas; i++){
 
-            consumoAguaEntities.add(new ConsumoAguaEntity())
         }
 
         return this.responseUtil.sucess(null,null,null);

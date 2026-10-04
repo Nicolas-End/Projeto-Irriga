@@ -13,13 +13,11 @@ import {
   View,
 } from 'react-native';
 
-import { router } from 'expo-router';
+import { router } from 'expo-router'; 
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { requisicao } from '@/services/api';
 
-import { signInWithEmailAndPassword } from 'firebase/auth';
-
-import { auth } from '@/config/firebase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -29,67 +27,59 @@ export default function Login() {
 
   const [carregando, setCarregando] = useState(false);
 
-  async function fazerLogin() {
-    if (!email.trim() || !senha.trim()) {
+async function fazerLogin() {
+  if (!email.trim() || !senha.trim()) {
+    Alert.alert(
+      'Atenção',
+      'Preencha o e-mail e a senha.'
+    );
+
+    return;
+  }
+
+  try {
+    setCarregando(true);
+
+    const response = await requisicao(
+      '/auth/login',
+      'POST',
+      {
+        email: email.trim(),
+        senha: senha,
+      }
+    );
+
+    if (response.status === 200) {
+      router.replace('/');
+      return;
+    }
+
+    if (response.status === 409) {
       Alert.alert(
-        'Atenção',
-        'Preencha o e-mail e a senha.'
+        'Erro ao entrar',
+        'E-mail ou senha incorretos.'
       );
 
       return;
     }
 
-    try {
-      setCarregando(true);
+    Alert.alert(
+      'Erro ao entrar',
+      'Não foi possível realizar o login.'
+    );
 
-      await signInWithEmailAndPassword(
-        auth,
-        email.trim(),
-        senha
-      );
+  } catch (error) {
+    console.log('Erro ao fazer login:', error);
 
-      router.replace('/');
-    } catch (error: any) {
-      console.log('Erro no login:', error);
+    Alert.alert(
+      'Erro de conexão',
+      'Não foi possível conectar ao servidor.'
+    );
 
-      let mensagem =
-        'Não foi possível realizar o login.';
-
-      switch (error.code) {
-        case 'auth/invalid-email':
-          mensagem =
-            'O e-mail informado é inválido.';
-          break;
-
-        case 'auth/invalid-credential':
-          mensagem =
-            'E-mail ou senha incorretos.';
-          break;
-
-        case 'auth/user-disabled':
-          mensagem =
-            'Este usuário foi desativado.';
-          break;
-
-        case 'auth/too-many-requests':
-          mensagem =
-            'Muitas tentativas de login. Tente novamente mais tarde.';
-          break;
-
-        case 'auth/network-request-failed':
-          mensagem =
-            'Não foi possível conectar ao Firebase. Verifique sua internet.';
-          break;
-      }
-
-      Alert.alert(
-        'Erro ao entrar',
-        mensagem
-      );
-    } finally {
-      setCarregando(false);
-    }
+  } finally {
+    setCarregando(false);
   }
+}
 
   function abrirCadastro() {
     router.push('/cadastro');

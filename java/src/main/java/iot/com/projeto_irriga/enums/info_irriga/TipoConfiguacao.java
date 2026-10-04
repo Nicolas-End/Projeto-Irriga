@@ -3,7 +3,7 @@ package iot.com.projeto_irriga.enums.info_irriga;
 public enum TipoConfiguacao {
 
     ECONOMICA("ECONOMICA"),
-    PADRAO("PADRAO"),
+    EQUILIBRADA("EQUILIBRADA"),
     CUSTOMIZADO("CUSTOMIZADO");
 
 

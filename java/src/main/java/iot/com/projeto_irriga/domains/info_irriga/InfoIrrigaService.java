@@ -21,21 +21,32 @@ public class InfoIrrigaService {
     }
 
 
+    
+
+
+
     public ApiResponse getAllInfoIrrigaDatas(){
-        List<InfoIrrigaEntity> infoIrrigaEntities = this.infoIrrigaRepository.findAll();
 
+        InfoIrrigaEntity infoIrrigaEntity = this.getFirstInfoIrrigaEntity();
+        if(infoIrrigaEntity == null){
 
-        if (infoIrrigaEntities.isEmpty()){
-            InfoIrrigaDatasDTO  infoIrrigaDatasDTO = new InfoIrrigaDatasDTO("Não informado", "Não informado",0,0,0);
-            return  this.responseUtil.sucess(infoIrrigaDatasDTO,"informações Verificadas", HttpStatus.OK);
+            return  this.responseUtil.sucess(null, "informações Não cadastradas", HttpStatus.OK);
         }
-        InfoIrrigaEntity infoIrrigaEntity = infoIrrigaEntities.get(0);
 
-
-        InfoIrrigaDatasDTO infoIrrigaDatasDTO = new InfoIrrigaDatasDTO(infoIrrigaEntity.getArduino().getArduinoModel().toString(), infoIrrigaEntity.getUsuario().getEmail(), infoIrrigaEntity.getIntervalo(), infoIrrigaEntity.getUmidadeMinima(), infoIrrigaEntity.getDuracaoIrrigacao()) ;
+        InfoIrrigaDatasDTO infoIrrigaDatasDTO = new InfoIrrigaDatasDTO(infoIrrigaEntity.getArduino().getArduinoModel().toString(), infoIrrigaEntity.getUsuario().getEmail(), infoIrrigaEntity.getTipoConfiguacao(),infoIrrigaEntity.getIntervalo(), infoIrrigaEntity.getUmidadeMinima(), infoIrrigaEntity.getDuracaoIrrigacao()) ;
 
 
         return  this.responseUtil.sucess(infoIrrigaDatasDTO, "informações Verificadas", HttpStatus.OK);
+
+    }
+
+
+    public InfoIrrigaEntity getFirstInfoIrrigaEntity(){
+
+        InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaRepository.findFirstByOrderByIdAsc();
+
+
+        return  infoIrrigaEntity;
 
     }
 

@@ -6,11 +6,15 @@ import iot.com.projeto_irriga.domains.usuario.UsuarioEntity;
 import iot.com.projeto_irriga.enums.bomba.ModeloBomba;
 import iot.com.projeto_irriga.infra.utils.model.EntityModel;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "tb_bomba")
+@Getter
+@Setter
 public class BombaEntity extends EntityModel {
 
     @Id
