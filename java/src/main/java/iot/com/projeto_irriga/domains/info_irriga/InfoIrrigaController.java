@@ -21,8 +21,7 @@ public class InfoIrrigaController {
 
     }
 
-
-     @GetMapping
+    @GetMapping
     public ResponseEntity getAllInfoIrriga (){
         ApiResponse response = this.infoIrrigaService.getAllInfoIrrigaDatas();
          return ResponseEntity.status(response.getStatus()).body(response);

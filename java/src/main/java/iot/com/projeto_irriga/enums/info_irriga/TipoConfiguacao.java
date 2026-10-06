@@ -4,7 +4,7 @@ public enum TipoConfiguacao {
 
     ECONOMICA("ECONOMICA"),
     EQUILIBRADA("EQUILIBRADA"),
-    CUSTOMIZADO("CUSTOMIZADO");
+    CUSTOMIZADA("CUSTOMIZADA");
 
 
     private String tipo;

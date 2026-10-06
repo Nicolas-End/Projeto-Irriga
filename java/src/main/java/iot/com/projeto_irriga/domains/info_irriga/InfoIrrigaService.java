@@ -21,7 +21,11 @@ public class InfoIrrigaService {
     }
 
 
-    
+    public ApiResponse setInfoDatas(InfoIrrigaDatasDTO userInfoDatas){
+
+        return this.responseUtil.sucess(null,null,null);
+
+    }
 
 
 
