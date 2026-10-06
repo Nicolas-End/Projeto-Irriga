@@ -22,7 +22,6 @@ export default function RootLayout() {
         <AnimatedSplashOverlay />
 
         <Stack
-          initialRouteName="login"
           screenOptions={{
             headerShown: false,
             contentStyle: {
@@ -30,40 +29,9 @@ export default function RootLayout() {
             },
           }}
         >
-          <Stack.Screen
-            name="login"
-            options={{
-              headerShown: false,
-            }}
-          />
-
-          <Stack.Screen
-            name="cadastro"
-            options={{
-              headerShown: false,
-            }}
-          />
-
-          <Stack.Screen
-            name="index"
-            options={{
-              headerShown: false,
-            }}
-          />
-
-          <Stack.Screen
-            name="media"
-            options={{
-              headerShown: false,
-            }}
-          />
-
-          <Stack.Screen
-            name="historico"
-            options={{
-              headerShown: false,
-            }}
-          />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="cadastro" />
+          <Stack.Screen name="(tabs)" />
         </Stack>
       </ThemeProvider>
     </View>
