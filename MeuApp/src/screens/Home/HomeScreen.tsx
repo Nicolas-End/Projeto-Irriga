@@ -13,28 +13,12 @@ import {
 } from 'react-native';
 
 import { styles } from './styles';
-// ajuste o caminho conforme onde está o seu arquivo da função `requisicao`
-import { requisicao } from '@/services/api'
-
-/* ------------------------------------------------------------------ */
-/* TIPOS                                                               */
-/* ------------------------------------------------------------------ */
-
-type IrrigationMode = 'economica' | 'equilibrada' | 'customizada';
-
-type InfoIrrigaResponse = {
-  datas: {
-    arduino: string;
-    configuacao: string; // (sic) mesmo nome que vem da API
-    duracaoIrrigacao: number;
-    intervaloIrrigacao: number;
-    umidadeMinima: number;
-    usuarioEmail: string;
-  };
-  message: string;
-  status: string;
-  sucess: boolean; // (sic)
-};
+// ajuste o caminho conforme onde você colocar o service
+import {
+  buscarConfiguracao,
+  salvarConfiguracao,
+  ModoIrrigacao,
+} from '@/screens/Home/api'
 
 /* ------------------------------------------------------------------ */
 /* PRESETS DOS MODOS FIXOS                                             */
@@ -53,23 +37,6 @@ const MODE_CONFIG = {
     irrigationTime: '10',
     interval: '30',
   },
-};
-
-/* ------------------------------------------------------------------ */
-/* HELPERS                                                             */
-/* ------------------------------------------------------------------ */
-
-// "CUSTOMIZADA" | "Econômica" | "equilibrada" -> IrrigationMode
-const parseMode = (value: string): IrrigationMode => {
-  const normalized = (value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-
-  if (normalized === 'economica') return 'economica';
-  if (normalized === 'equilibrada') return 'equilibrada';
-  return 'customizada';
 };
 
 /* ------------------------------------------------------------------ */
@@ -141,51 +108,44 @@ function ParameterInput({
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [arduino, setArduino] = useState('');
+  const[id, setId] = useState('')
   const [userEmail, setUserEmail] = useState('');
 
-  const [mode, setMode] = useState<IrrigationMode>('equilibrada');
+  const [mode, setMode] = useState<ModoIrrigacao>('equilibrada');
   const [humidity, setHumidity] = useState(MODE_CONFIG.equilibrada.humidity);
   const [irrigationTime, setIrrigationTime] = useState(
     MODE_CONFIG.equilibrada.irrigationTime
   );
   const [interval, setInterval] = useState(MODE_CONFIG.equilibrada.interval);
 
-  /* ---------------------- GET /info-irriga ---------------------- */
+  /* ---------------------- GET (via service) ---------------------- */
 
   const loadInfo = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    try {
-      const { status, data } = await requisicao<InfoIrrigaResponse>(
-        '/info-irriga',
-        'GET'
-      );
+    const resultado = await buscarConfiguracao();
 
-      if (status !== 200 || !data?.sucess || !data.datas) {
-        setError(data?.message ?? 'Não foi possível carregar as informações.');
-        return;
-      }
-
-      const info = data.datas;
-
-      setArduino(info.arduino);
-      setUserEmail(info.usuarioEmail);
-      setMode(parseMode(info.configuacao));
-
-      // Os valores exibidos sempre vêm do servidor,
-      // independente do modo (fixo ou customizado).
-      setHumidity(String(info.umidadeMinima));
-      setIrrigationTime(String(info.duracaoIrrigacao));
-      setInterval(String(info.intervaloIrrigacao));
-    } catch {
-      setError('Falha de conexão com o servidor.');
-    } finally {
+    if (!resultado.sucesso || !resultado.dados) {
+      setError(resultado.mensagem);
       setLoading(false);
+      return;
     }
+
+    const info = resultado.dados;
+    setId(info.id);
+    setArduino(info.arduino);
+    setUserEmail(info.usuarioEmail);
+    setMode(info.modo);
+    setHumidity(String(info.umidadeMinima));
+    setIrrigationTime(String(info.duracaoIrrigacao));
+    setInterval(String(info.intervaloIrrigacao));
+
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -194,7 +154,7 @@ export default function HomeScreen() {
 
   /* ------------------------- Interações ------------------------- */
 
-  const selectMode = (selectedMode: IrrigationMode) => {
+  const selectMode = (selectedMode: ModoIrrigacao) => {
     setMode(selectedMode);
 
     if (selectedMode === 'customizada') {
@@ -232,13 +192,72 @@ export default function HomeScreen() {
     }
   };
 
-  const saveConfiguration = () => {
+  /* ---------------------- POST (via service) --------------------- */
+
+  const saveConfiguration = async () => {
+    if (saving) return;
+
+    const umidadeMinima = Number(humidity);
+    const intervaloIrrigacao = Number(interval);
+    const duracaoIrrigacao = Number(irrigationTime);
+
+    // Validação antes de enviar
+    if (
+      humidity === '' ||
+      Number.isNaN(umidadeMinima) ||
+      umidadeMinima < 0 ||
+      umidadeMinima > 100
+    ) {
+      Alert.alert('Valor inválido', 'A umidade deve estar entre 0 e 100%.');
+      return;
+    }
+
+    if (
+      interval === '' ||
+      Number.isNaN(intervaloIrrigacao) ||
+      intervaloIrrigacao < 1
+    ) {
+      Alert.alert(
+        'Valor inválido',
+        'O intervalo entre irrigações deve ser de pelo menos 1 minuto.'
+      );
+      return;
+    }
+
+    if (
+      irrigationTime === '' ||
+      Number.isNaN(duracaoIrrigacao) ||
+      duracaoIrrigacao < 1
+    ) {
+      Alert.alert(
+        'Valor inválido',
+        'A duração da irrigação deve ser de pelo menos 1 minuto.'
+      );
+      return;
+    }
+
+    setSaving(true);
+
+    const resultado = await salvarConfiguracao({
+      id, 
+      arduino,
+      usuarioEmail: userEmail,
+      modo: mode,
+      umidadeMinima,
+      intervaloIrrigacao,
+      duracaoIrrigacao,
+    });
+
+    setSaving(false);
+
     Alert.alert(
-      'Configuração salva',
-      `Modo: ${getModeName()}\n\n` +
-        `Umidade mínima: ${humidity}%\n` +
-        `Intervalo entre irrigações: ${interval} min\n` +
-        `Duração da irrigação: ${irrigationTime} min`
+      resultado.sucesso ? 'Configuração salva' : 'Erro ao salvar',
+      resultado.sucesso
+        ? `Modo: ${getModeName()}\n\n` +
+            `Umidade mínima: ${umidadeMinima}%\n` +
+            `Intervalo entre irrigações: ${intervaloIrrigacao} min\n` +
+            `Duração da irrigação: ${duracaoIrrigacao} min`
+        : resultado.mensagem
     );
   };
 
@@ -455,8 +474,16 @@ export default function HomeScreen() {
 
             {/* SALVAR */}
 
-            <Pressable style={styles.saveButton} onPress={saveConfiguration}>
-              <Text style={styles.saveButtonText}>Salvar configuração</Text>
+            <Pressable
+              disabled={saving}
+              style={[styles.saveButton, saving && styles.disabledButton]}
+              onPress={saveConfiguration}
+            >
+              {saving ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.saveButtonText}>Salvar configuração</Text>
+              )}
             </Pressable>
           </>
         )}

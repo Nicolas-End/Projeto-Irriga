@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class InfoIrrigaService {
@@ -37,7 +39,7 @@ public class InfoIrrigaService {
             return  this.responseUtil.sucess(null, "informações Não cadastradas", HttpStatus.OK);
         }
 
-        InfoIrrigaDatasDTO infoIrrigaDatasDTO = new InfoIrrigaDatasDTO(infoIrrigaEntity.getArduino().getArduinoModel().toString(), infoIrrigaEntity.getUsuario().getEmail(), infoIrrigaEntity.getTipoConfiguacao(),infoIrrigaEntity.getIntervalo(), infoIrrigaEntity.getUmidadeMinima(), infoIrrigaEntity.getDuracaoIrrigacao()) ;
+        InfoIrrigaDatasDTO infoIrrigaDatasDTO = new InfoIrrigaDatasDTO(infoIrrigaEntity.getId() ,infoIrrigaEntity.getArduino().getArduinoModel().toString(), infoIrrigaEntity.getUsuario().getEmail(), infoIrrigaEntity.getTipoConfiguacao(),infoIrrigaEntity.getIntervalo(), infoIrrigaEntity.getUmidadeMinima(), infoIrrigaEntity.getDuracaoIrrigacao()) ;
 
 
         return  this.responseUtil.sucess(infoIrrigaDatasDTO, "informações Verificadas", HttpStatus.OK);
@@ -45,7 +47,82 @@ public class InfoIrrigaService {
     }
 
 
-    public InfoIrrigaEntity getFirstInfoIrrigaEntity(){
+    public ApiResponse SetAllInfoIrrigaDatas(
+            InfoIrrigaDatasDTO dto
+    ) {
+
+        Optional<InfoIrrigaEntity> optional =
+                this.infoIrrigaRepository.findById(dto.id());
+
+        if (optional.isEmpty()) {
+            return this.responseUtil.error(
+                    null,
+                    "Informações da irrigação não encontradas",
+                    HttpStatus.NOT_FOUND
+            );
+        }
+
+        InfoIrrigaEntity entity = optional.get();
+
+
+        if (entity.getTipoConfiguacao() != dto.configuacao()){
+            entity.setTipoConfiguacao(dto.configuacao());
+        }
+
+        if (dto.intervaloIrrigacao() != null) {
+
+            if (dto.intervaloIrrigacao() > 0) {
+                entity.setIntervalo(
+                        dto.intervaloIrrigacao()
+                );
+
+
+                entity.setIrrigaPorIntervalo(true);
+
+            } else {
+                entity.setIrrigarPorUmidade(false);
+                entity.setIrrigaPorIntervalo(false);
+            }
+
+        }
+
+
+        if (dto.duracaoIrrigacao() != null
+                && dto.duracaoIrrigacao() > 0) {
+
+            entity.setDuracaoIrrigacao(
+                    dto.duracaoIrrigacao()
+            );
+
+
+        }
+
+
+        if (dto.umidadeMinima() != null
+                && dto.umidadeMinima() >= 0) {
+
+            entity.setUmidadeMinima(
+                    dto.umidadeMinima()
+            );
+            entity.setIrrigarPorUmidade(true);
+        }else {
+            entity.setUmidadeMinima(0);
+            entity.setIrrigaPorIntervalo(false);
+        }
+
+        this.infoIrrigaRepository.save(entity);
+
+        return this.responseUtil.sucess(
+                null,
+                "Dados atualizados com sucesso",
+                HttpStatus.OK
+        );
+    }
+
+
+
+
+        public InfoIrrigaEntity getFirstInfoIrrigaEntity(){
 
         InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaRepository.findFirstByOrderByIdAsc();
 
