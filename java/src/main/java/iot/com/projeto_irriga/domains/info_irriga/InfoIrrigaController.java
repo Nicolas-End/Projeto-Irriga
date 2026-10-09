@@ -41,7 +41,7 @@ public class InfoIrrigaController {
        ApiResponse response =  this.infoIrrigaService.SetAllInfoIrrigaDatas(infoIrrigaDatasDTO);
 
 
-  
+
         return ResponseEntity.status(response.getStatus()).body(response);
 
 

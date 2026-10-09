@@ -7,11 +7,13 @@ import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaService;
 import iot.com.projeto_irriga.dto.consumo_agua.ConsumoAguaTotalDTO;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 @Service
@@ -28,32 +30,49 @@ public class ConsumoAguaService {
         this.consumoAguaRepository = consumoAguaRepository;
     }
 
-    public ApiResponse getConsumoAguaMes(){
-        Calendar inicio = Calendar.getInstance();
-        inicio.set(Calendar.DAY_OF_MONTH, 1);
-        inicio.set(Calendar.HOUR_OF_DAY, 0);
-        inicio.set(Calendar.MINUTE, 0);
-        inicio.set(Calendar.SECOND, 0);
-        inicio.set(Calendar.MILLISECOND, 0);
+    public ApiResponse getConsumoAguaMes() {
 
-        Calendar fim = (Calendar) inicio.clone();
-        fim.add(Calendar.MONTH, 1);
-        List<ConsumoAguaEntity> consumoAguaEntityList = this.consumoAguaRepository.findByDateBetween(inicio.getTime(), fim.getTime());
+        Date inicio = getInicioMes();
+        Date fim = getInicioProximoMes();
 
-        if(consumoAguaEntityList.isEmpty()){
-            return this.responseUtil.sucess(new ConsumoAguaTotalDTO(0.0), "Consumo de agua mes relatado", HttpStatus.OK);
+
+        List<ConsumoAguaEntity> consumos =
+                consumoAguaRepository.findByDateBetween(inicio, fim);
+
+        if (consumos.isEmpty()) {
+            return responseUtil.sucess(
+                    new ConsumoAguaTotalDTO(0.0, 0.0, 0, null),
+                    "Consumo de agua mes relatado",
+                    HttpStatus.OK
+            );
         }
-        AtomicReference<Double> litrosTotais = new AtomicReference<>((double) 0);
 
-        consumoAguaEntityList.forEach(consumoAguaEntity -> {
-            litrosTotais.updateAndGet(v -> new Double((double) (v + consumoAguaEntity.getLitrosGastos())));
-
-        });
-
-        return this.responseUtil.sucess(new ConsumoAguaTotalDTO(litrosTotais.get()),"Consumo de agua mes relatado", HttpStatus.OK);
+        double litrosTotais = this.calcularLitrosTotais(consumos);
+        double tempoTotal = this.calcularTempoTotal(consumos);
+        Date ultimaVezIrrigado = this.calcularUltimaVezIrrigado(consumos);
+        return responseUtil.sucess(
+                new ConsumoAguaTotalDTO(litrosTotais, tempoTotal, consumos.size(), ultimaVezIrrigado),
+                "Consumo de agua mes relatado",
+                HttpStatus.OK
+        );
     }
 
-    public ApiResponse addConsumoAgua(int vezesIrrigadas){
+
+
+    @Transactional
+    public ApiResponse addConsumoAguaPeloEndpoint(){
+        InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaService.getFirstInfoIrrigaEntity();
+        BombaEntity bomba = this.bombaService.getFirstBombaEntity();
+
+        ConsumoAguaEntity consumoAguaEntity = new ConsumoAguaEntity.Builder(bomba, infoIrrigaEntity).build();
+
+
+        this.consumoAguaRepository.save(consumoAguaEntity);
+
+        return this.responseUtil.sucess(null,"Irrigação cadastrada com sucesso",HttpStatus.OK);
+    }
+
+    public ApiResponse addConsumoAguaPeloArduino(int vezesIrrigadas){
 
         InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaService.getFirstInfoIrrigaEntity();
         BombaEntity bomba = this.bombaService.getFirstBombaEntity();
@@ -69,6 +88,70 @@ public class ConsumoAguaService {
         return this.responseUtil.sucess(null,null,null);
 
     }
+
+    private Date getInicioMes() {
+
+        Calendar calendario = Calendar.getInstance();
+
+        calendario.set(Calendar.DAY_OF_MONTH, 1);
+        calendario.set(Calendar.HOUR_OF_DAY, 0);
+        calendario.set(Calendar.MINUTE, 0);
+        calendario.set(Calendar.SECOND, 0);
+        calendario.set(Calendar.MILLISECOND, 0);
+
+        return calendario.getTime();
+    }
+    private Date getInicioProximoMes() {
+
+        Calendar calendario = Calendar.getInstance();
+
+        calendario.set(Calendar.DAY_OF_MONTH, 1);
+        calendario.set(Calendar.HOUR_OF_DAY, 0);
+        calendario.set(Calendar.MINUTE, 0);
+        calendario.set(Calendar.SECOND, 0);
+        calendario.set(Calendar.MILLISECOND, 0);
+
+        calendario.add(Calendar.MONTH, 1);
+
+        return calendario.getTime();
+    }
+    private double calcularLitrosTotais(
+            List<ConsumoAguaEntity> consumos
+    ) {
+
+        double total = 0;
+
+        for (ConsumoAguaEntity consumo : consumos) {
+            total += consumo.getLitrosGastos();
+        }
+
+        return total;
+    }
+    private double calcularTempoTotal(
+            List<ConsumoAguaEntity> consumos
+    ) {
+
+        double total = 0;
+
+        for (ConsumoAguaEntity consumo : consumos) {
+            total += consumo.getTempoLigado();
+        }
+
+        return total;
+    }
+
+    private Date calcularUltimaVezIrrigado( List<ConsumoAguaEntity> consumos    ){
+        Date date = new Date();
+
+        for(ConsumoAguaEntity consumo : consumos){
+            if(consumo.getDate().after(date)){
+                date = consumo.getDate();
+            }
+        }
+
+        return date;
+    }
+
 
 
 

@@ -4,6 +4,7 @@ package iot.com.projeto_irriga.domains.consumo_agua;
 import iot.com.projeto_irriga.domains.bomba.BombaEntity;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaEntity;
 import iot.com.projeto_irriga.domains.usuario.UsuarioEntity;
+import iot.com.projeto_irriga.infra.utils.DateUtil;
 import iot.com.projeto_irriga.infra.utils.model.EntityModel;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -27,7 +28,7 @@ public class ConsumoAguaEntity extends EntityModel {
         this.litrosGastos = builder.litrosGastos;
         this.bomba = builder.bomba;
         this.date = builder.date;
-        this.duracaoIrrigacao = builder.duracaoIrrigacao; 
+
     }
 
     public static class Builder{
@@ -36,19 +37,19 @@ public class ConsumoAguaEntity extends EntityModel {
         private final BombaEntity bomba;
         private final double litrosGastos;
         private final UsuarioEntity usuario;
-        private final Double duracaoIrrigacao ;
 
 
-        public Builder( BombaEntity bomba, UsuarioEntity usuario, InfoIrrigaEntity infoIrrigaEntity){
+
+        public Builder( BombaEntity bomba,  InfoIrrigaEntity infoIrrigaEntity){
             this.tempoLigado = infoIrrigaEntity.getDuracaoIrrigacao();
             this.bomba = bomba;
             this.litrosGastos = bomba.getVazao() * infoIrrigaEntity.getDuracaoIrrigacao();
-            this.usuario = usuario;
-            this.duracaoIrrigacao = infoIrrigaEntity.getDuracaoIrrigacao();
+            this.usuario = infoIrrigaEntity.getUsuario();
+
 
         }
 
-        public ConsumoAguaEntity build (){
+        public ConsumoAguaEntity  build (){
             return  new ConsumoAguaEntity(this);
         }
 
@@ -57,9 +58,6 @@ public class ConsumoAguaEntity extends EntityModel {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
-
-    @Column
-    private Double duracaoIrrigacao;
 
 
 
@@ -79,5 +77,11 @@ public class ConsumoAguaEntity extends EntityModel {
     @ManyToOne
     @JoinColumn(name = "usuario_email")
     private UsuarioEntity usuario;
+
+
+    @PrePersist
+    private void PreDate(){
+        this.date = DateUtil.GetPresent();
+    }
 
 }

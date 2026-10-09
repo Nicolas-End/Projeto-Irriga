@@ -1,4 +1,6 @@
-package iot.com.projeto_irriga.domains.arduino;
+package iot.com.projeto_irriga.infra.utils.bluetooth;
+
+
 
 import com.github.hypfvieh.bluetooth.DeviceManager;
 import com.github.hypfvieh.bluetooth.wrapper.BluetoothDevice;
@@ -11,6 +13,7 @@ import jakarta.annotation.PreDestroy;
 import org.freedesktop.dbus.interfaces.Properties;
 import org.freedesktop.dbus.types.Variant;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
@@ -22,7 +25,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ArduinoBluetooth {
+//@Service
+public class BluetoothUtil {
 
 
 
@@ -137,9 +141,9 @@ public class ArduinoBluetooth {
         );
 
         characteristic = localizarCaracteristica(
-                        service,
-                        characteristicUuid
-                );
+                service,
+                characteristicUuid
+        );
 
         if (characteristic == null) {
 
@@ -509,7 +513,7 @@ public class ArduinoBluetooth {
                     );
 
 
-                if (respostaJson == null) {
+            if (respostaJson == null) {
 
                 throw new RuntimeException(
                         "Timeout: Arduino não respondeu em "
