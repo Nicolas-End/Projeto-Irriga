@@ -3,6 +3,8 @@ package iot.com.projeto_irriga.domains.info_irriga;
 import iot.com.projeto_irriga.dto.info_irriga.InfoIrrigaDatasDTO;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
+import iot.com.projeto_irriga.infra.utils.scheduler.ArduinoSchedulers;
+import jakarta.annotation.PostConstruct;
 import org.aspectj.weaver.ResolvedPointcutDefinition;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -10,28 +12,36 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class InfoIrrigaService {
 
     private final InfoIrrigaRepository infoIrrigaRepository;
     private final ResponseUtil responseUtil;
+    private final ArduinoSchedulers arduinoSchedulers;
 
-    public InfoIrrigaService (InfoIrrigaRepository infoIrrigaRepository, ResponseUtil responseUtil){
+    public InfoIrrigaService (InfoIrrigaRepository infoIrrigaRepository, ResponseUtil responseUtil,ArduinoSchedulers arduinoSchedulers){
         this.infoIrrigaRepository = infoIrrigaRepository;
         this.responseUtil = responseUtil;
+        this.arduinoSchedulers = arduinoSchedulers;
     }
 
 
-    public ApiResponse setInfoDatas(InfoIrrigaDatasDTO userInfoDatas){
+    @PostConstruct
+    public void configurarSchedulerIrrigacao(){
 
-        return this.responseUtil.sucess(null,null,null);
+        InfoIrrigaEntity entity = this.getFirstInfoIrrigaEntity();
 
+        ArduinoSchedulers.SET_IRRIGATION_SCHEDULE((long) entity.getIntervalo(), TimeUnit.MINUTES);
+
+        return;
     }
 
 
 
-    public ApiResponse getAllInfoIrrigaDatas(){
+
+    public ApiResponse pegarDadosInfoIrriga(){
 
         InfoIrrigaEntity infoIrrigaEntity = this.getFirstInfoIrrigaEntity();
         if(infoIrrigaEntity == null){
@@ -47,7 +57,7 @@ public class InfoIrrigaService {
     }
 
 
-    public ApiResponse SetAllInfoIrrigaDatas(
+    public ApiResponse reconfigurarDadosInfoIrriga(
             InfoIrrigaDatasDTO dto
     ) {
 
@@ -76,6 +86,11 @@ public class InfoIrrigaService {
                         dto.intervaloIrrigacao()
                 );
 
+
+
+                ArduinoSchedulers.STOP_IRRIGATION_SCHEDULE();
+
+                ArduinoSchedulers.SET_IRRIGATION_SCHEDULE((long) entity.getIntervalo(),TimeUnit.MINUTES);
 
                 entity.setIrrigaPorIntervalo(true);
 

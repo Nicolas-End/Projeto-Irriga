@@ -4,10 +4,14 @@ import iot.com.projeto_irriga.domains.bomba.BombaEntity;
 import iot.com.projeto_irriga.domains.bomba.BombaService;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaEntity;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaService;
+import iot.com.projeto_irriga.dto.consumo_agua.ConsumoAguaFormatadoDTO;
 import iot.com.projeto_irriga.dto.consumo_agua.ConsumoAguaTotalDTO;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +19,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+
+@Slf4j
 @Service
 public class ConsumoAguaService {
 
@@ -88,6 +93,38 @@ public class ConsumoAguaService {
         return this.responseUtil.sucess(null,null,null);
 
     }
+
+    public ApiResponse listarUltimasIrrigacoes(){
+
+        Pageable ultimos10 = PageRequest.of(0, 10);
+        List<ConsumoAguaEntity> listaEntity = consumoAguaRepository.findUltimos10(ultimos10);
+
+        List<ConsumoAguaFormatadoDTO> listaDTO = this.converterConsumoEntityEmDTOFormatado(listaEntity);
+
+        return this.responseUtil.sucess(listaDTO,"Irrigações encontradas", HttpStatus.OK);
+    }
+
+
+
+
+
+
+    private List<ConsumoAguaFormatadoDTO> converterConsumoEntityEmDTOFormatado(List<ConsumoAguaEntity> entities) {
+        return entities.stream()
+                .map(e -> new ConsumoAguaFormatadoDTO(
+                        0.0,
+                        e.getTempoLigado(),
+                        e.getLitrosGastos(),
+                        e.getConfiguracao(),
+                        e.getBomba().getArduino().getArduinoModel(),
+                        e.getDate())
+
+
+                )
+
+                .toList();
+    }
+
 
     private Date getInicioMes() {
 

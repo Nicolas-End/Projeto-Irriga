@@ -25,7 +25,7 @@ public class InfoIrrigaController {
     @GetMapping
     public ResponseEntity getAllInfoIrriga (){
 
-        ApiResponse response = this.infoIrrigaService.getAllInfoIrrigaDatas();
+        ApiResponse response = this.infoIrrigaService.pegarDadosInfoIrriga();
          return ResponseEntity.status(response.getStatus()).body(response);
     }
 
@@ -33,12 +33,8 @@ public class InfoIrrigaController {
     @PutMapping
     public <T> ResponseEntity setIrrigaConfig(@RequestBody InfoIrrigaDatasDTO infoIrrigaDatasDTO){
 
-        log.info("Enviando dados ao Banco dados");
 
-
-        log.info(String.valueOf(infoIrrigaDatasDTO));
-
-       ApiResponse response =  this.infoIrrigaService.SetAllInfoIrrigaDatas(infoIrrigaDatasDTO);
+       ApiResponse response =  this.infoIrrigaService.reconfigurarDadosInfoIrriga(infoIrrigaDatasDTO);
 
 
 

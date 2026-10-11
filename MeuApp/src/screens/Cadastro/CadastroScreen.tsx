@@ -14,7 +14,7 @@ import {
 import { router } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { cadastrar } from '@/services/auth-service';
+
 
 import { styles } from './styles';
 
@@ -57,10 +57,7 @@ export default function CadastroScreen() {
     try {
       setCarregando(true);
 
-      await cadastrar(
-        email.trim(),
-        senha
-      );
+     
 
       Alert.alert(
         'Conta criada',

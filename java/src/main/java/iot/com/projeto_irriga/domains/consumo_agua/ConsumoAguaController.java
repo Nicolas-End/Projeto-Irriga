@@ -20,12 +20,21 @@ public class ConsumoAguaController {
     }
 
 
-    @GetMapping()
+    @GetMapping("/analytics")
     public ResponseEntity getConsumoAguaTotal(){
         ApiResponse response = this.consumoAguaService.getConsumoAguaMes();
 
         return ResponseEntity.status(response.getStatus()).body(response);
 
+    }
+
+    @GetMapping()
+    public ResponseEntity pegarRegistrosConsumoAgua(){
+
+        ApiResponse response = this.consumoAguaService.listarUltimasIrrigacoes();
+
+
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
 

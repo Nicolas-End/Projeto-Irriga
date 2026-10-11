@@ -3,7 +3,9 @@ package iot.com.projeto_irriga.domains.consumo_agua;
 
 import iot.com.projeto_irriga.domains.bomba.BombaEntity;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaEntity;
+import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaService;
 import iot.com.projeto_irriga.domains.usuario.UsuarioEntity;
+import iot.com.projeto_irriga.enums.info_irriga.TipoConfiguacao;
 import iot.com.projeto_irriga.infra.utils.DateUtil;
 import iot.com.projeto_irriga.infra.utils.model.EntityModel;
 import jakarta.persistence.*;
@@ -27,6 +29,7 @@ public class ConsumoAguaEntity extends EntityModel {
         this.usuario = builder.usuario;
         this.litrosGastos = builder.litrosGastos;
         this.bomba = builder.bomba;
+        this.configuracao = builder.infoIrrigaEntity.getTipoConfiguacao();
         this.date = builder.date;
 
     }
@@ -37,6 +40,7 @@ public class ConsumoAguaEntity extends EntityModel {
         private final BombaEntity bomba;
         private final double litrosGastos;
         private final UsuarioEntity usuario;
+        private final InfoIrrigaEntity infoIrrigaEntity;
 
 
 
@@ -45,7 +49,7 @@ public class ConsumoAguaEntity extends EntityModel {
             this.bomba = bomba;
             this.litrosGastos = bomba.getVazao() * infoIrrigaEntity.getDuracaoIrrigacao();
             this.usuario = infoIrrigaEntity.getUsuario();
-
+            this.infoIrrigaEntity = infoIrrigaEntity;
 
         }
 
@@ -69,6 +73,9 @@ public class ConsumoAguaEntity extends EntityModel {
     private BombaEntity bomba;
 
     @Column
+    private Double umidadeSolo;
+
+    @Column
     private Date date ;
 
     @Column
@@ -77,6 +84,9 @@ public class ConsumoAguaEntity extends EntityModel {
     @ManyToOne
     @JoinColumn(name = "usuario_email")
     private UsuarioEntity usuario;
+
+    @Column(nullable = true)
+    private TipoConfiguacao configuracao;
 
 
     @PrePersist

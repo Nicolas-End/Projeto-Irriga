@@ -8,7 +8,7 @@ export async function requisicao<T>(
   metodo: Metodo = 'GET',
   body?: unknown
 ): Promise<{ status: number; data: T | null }> {
-
+  console.log(API_URL)
   const response = await fetch(
     `${API_URL}${endpoint}`,
     {
