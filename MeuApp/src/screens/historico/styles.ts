@@ -136,4 +136,18 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'right',
   },
+  saveButton: {
+    height: 54,
+    marginTop: 20,
+    borderRadius: 14,
+    backgroundColor: '#22C55E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });

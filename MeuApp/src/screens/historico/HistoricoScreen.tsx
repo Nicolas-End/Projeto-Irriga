@@ -96,8 +96,8 @@ export default function HistoricoScreen() {
 
           <Text style={styles.date}>{erro}</Text>
 
-          <Pressable style={{ marginTop: 16 }} onPress={() => carregar()}>
-            <Text style={[styles.infoValue, { color: '#22C55E' }]}>
+          <Pressable style={styles.saveButton} onPress={() => carregar()}>
+            <Text style={styles.saveButtonText}>
               Tentar novamente
             </Text>
           </Pressable>

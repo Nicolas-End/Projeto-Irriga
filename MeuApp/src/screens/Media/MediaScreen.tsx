@@ -126,10 +126,9 @@ export default function MediaScreen() {
           <Text style={styles.cardSubtitle}>{erro}</Text>
 
           <Pressable
-            style={{ marginTop: 16 }}
-            onPress={() => carregar(true)}
-          >
-            <Text style={styles.statusText}>Tentar novamente</Text>
+            style={styles.saveButton}
+            onPress={() => carregar(true)}>
+            <Text style={styles.saveButtonText}>Tentar novamente</Text>
           </Pressable>
         </View>
       )}
