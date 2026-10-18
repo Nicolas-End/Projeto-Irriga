@@ -1,9 +1,8 @@
 package iot.com.projeto_irriga.dto.arduino;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import iot.com.projeto_irriga.enums.arduino.StatusResposta;
 
-public record RespostaArduino(
-        @JsonProperty("StatusResposta")
-        Boolean status, String message) {
+import iot.com.projeto_irriga.enums.arduino.TiposComandos;
+
+public record  RespostaArduino <T>(
+        TiposComandos tipo, T valor, String comando, boolean ok) {
 }

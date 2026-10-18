@@ -1,5 +1,6 @@
 package iot.com.projeto_irriga.domains.arduino;
 
+import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import iot.com.projeto_irriga.infra.utils.scheduler.ArduinoSchedulers;
@@ -13,13 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/arduino")
 public class ArduinoController {
 
-
-    private final ResponseUtil responseUtil;
     private final ArduinoService arduinoService;
 
 
     public ArduinoController( ResponseUtil responseUtil, ArduinoSchedulers arduinoSchedulers, ArduinoService arduinoService) {
-        this.responseUtil = responseUtil;
         this.arduinoService = arduinoService;
     }
 
@@ -29,6 +27,13 @@ public class ArduinoController {
         ApiResponse response = this.arduinoService.StatusTotaisArduino();
 
         return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity validarConexaoBlue(){
+        ApiResponse arduinoResponse = this.arduinoService.pingTeste();
+
+        return ResponseEntity.status(arduinoResponse.getStatus()).body(arduinoResponse);
     }
 
 

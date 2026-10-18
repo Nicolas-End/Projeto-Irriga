@@ -10,6 +10,7 @@ import iot.com.projeto_irriga.dto.arduino.ComandoArduino;
 import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
 import org.freedesktop.dbus.interfaces.Properties;
 import org.freedesktop.dbus.types.Variant;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +26,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-//@Service
+//@Component
+@Slf4j
+
 public class BluetoothUtil {
 
 
@@ -68,24 +71,28 @@ public class BluetoothUtil {
 
 
     @PostConstruct
-    public void iniciar() throws Exception {
+    public void iniciar() {
 
-        System.out.println("[Arduino BLE] Inicializando...");
+        log.info("[Arduino BLE] Inicializando...");
 
-        deviceManager = DeviceManager.createInstance(false);
+        try {
 
-        conectar();
+            deviceManager = DeviceManager.createInstance(false);
+            conectar();
+            log.info("[Arduino BLE] Conectado ao dispositivo " + deviceAddress);
 
-        System.out.println(
-                "[Arduino BLE] Conectado ao dispositivo "
-                        + deviceAddress
-        );
+        } catch (Exception e) {
+                log.info(
+                    "[Arduino BLE] Não foi possível conectar na inicialização: "
+                            + e.getMessage()
+                            + ". Tentará novamente no primeiro comando.");
+        }
     }
 
 
     private void conectar() throws Exception {
 
-        System.out.println(
+        log.info(
                 "[Arduino BLE] Procurando dispositivo: "
                         + deviceAddress
         );
@@ -100,7 +107,7 @@ public class BluetoothUtil {
             );
         }
 
-        System.out.println(
+        log.info(
                 "[Arduino BLE] Dispositivo encontrado: "
                         + device.getAddress()
         );
@@ -108,14 +115,14 @@ public class BluetoothUtil {
 
         if (!device.isConnected()) {
 
-            System.out.println(
+            log.info(
                     "[Arduino BLE] Conectando..."
             );
 
             device.connect();
         }
 
-        System.out.println(
+        log.info(
                 "[Arduino BLE] Conexão estabelecida."
         );
 
@@ -135,7 +142,7 @@ public class BluetoothUtil {
             );
         }
 
-        System.out.println(
+        log.info(
                 "[Arduino BLE] Serviço encontrado: "
                         + service.getUuid()
         );
@@ -153,7 +160,7 @@ public class BluetoothUtil {
             );
         }
 
-        System.out.println(
+        log.info(
                 "[Arduino BLE] Característica encontrada: "
                         + characteristic.getUuid()
         );
@@ -163,7 +170,7 @@ public class BluetoothUtil {
 
         characteristic.startNotify();
 
-        System.out.println(
+        log.info(
                 "[Arduino BLE] Notificações ativadas."
         );
     }
@@ -186,7 +193,7 @@ public class BluetoothUtil {
 
         if (existente != null) {
 
-            System.out.println(
+            log.info(
                     "[Arduino BLE] Dispositivo encontrado "
                             + "entre os dispositivos conhecidos."
             );
@@ -194,7 +201,7 @@ public class BluetoothUtil {
             return existente;
         }
 
-        System.out.println(
+        log.warn(
                 "[Arduino BLE] Dispositivo não encontrado "
                         + "na lista conhecida. Iniciando scan..."
         );
@@ -378,7 +385,7 @@ public class BluetoothUtil {
 
                             } else {
 
-                                System.out.println(
+                                log.warn(
                                         "Tipo de Value não suportado: "
                                                 + valorRecebido.getClass()
                                 );
@@ -396,10 +403,7 @@ public class BluetoothUtil {
                                 return;
                             }
 
-                            System.out.println(
-                                    "[Arduino BLE] <- "
-                                            + mensagem
-                            );
+                            log.info("[Arduino BLE] <- {}", mensagem);
 
                             synchronized (bufferResposta) {
 
@@ -413,10 +417,7 @@ public class BluetoothUtil {
                                                 && respostaCompleta.endsWith("}")
                                 ) {
 
-                                    System.out.println(
-                                            "[Arduino BLE] <- RESPOSTA COMPLETA: "
-                                                    + respostaCompleta
-                                    );
+                                    log.info("[Arduino BLE] <- RESPOSTA COMPLETA: {}", respostaCompleta);
 
                                     filaRespostas.offer(
                                             respostaCompleta
@@ -424,7 +425,7 @@ public class BluetoothUtil {
 
                                     bufferResposta.setLength(0);
 
-                                    System.out.println(
+                                    log.info(
                                             "Resposta completa colocada na fila!"
                                     );
                                 }
@@ -480,9 +481,8 @@ public class BluetoothUtil {
                     );
 
 
-            System.out.println(
-                    "[Arduino BLE] -> "
-                            + json
+            log.info(
+                    "[Arduino BLE] -> {}", json
             );
 
 
@@ -527,10 +527,7 @@ public class BluetoothUtil {
             // Converter JSON para DTO
             // ----------------------------------------------------
 
-            System.out.println(
-                    "[Arduino BLE] JSON recebido para conversão: "
-                            + respostaJson
-            );
+            log.info("[Arduino BLE] JSON recebido para conversão: {}", respostaJson);
 
             return mapper.readValue(
                     respostaJson,
@@ -559,7 +556,7 @@ public class BluetoothUtil {
                         characteristic == null
         ) {
 
-            System.out.println(
+            log.warn(
                     "[Arduino BLE] Conexão perdida. "
                             + "Reconectando..."
             );
@@ -584,7 +581,7 @@ public class BluetoothUtil {
                             device.isConnected()
             ) {
 
-                System.out.println(
+                log.warn(
                         "[Arduino BLE] Desconectando..."
                 );
 
@@ -593,10 +590,7 @@ public class BluetoothUtil {
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "[Arduino BLE] Erro ao desconectar: "
-                            + e.getMessage()
-            );
+            log.error("[Arduino BLE] Erro ao desconectar: {}", e.getMessage());
         }
     }
 }

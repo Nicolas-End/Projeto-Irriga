@@ -17,13 +17,10 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ArduinoSchedulers {
 
-    private static BluetoothUtil BLE;
 
     private static ScheduledExecutorService IRRIGATION_SCHEDULE;
 
-    public ArduinoSchedulers (BluetoothUtil ble){
-        BLE = ble;
-    }
+
 
 
     @PostConstruct
@@ -54,4 +51,6 @@ public class ArduinoSchedulers {
     public static void setIrrigationSchedule(ScheduledExecutorService irrigationSchedule) {
         IRRIGATION_SCHEDULE = irrigationSchedule;
     }
+
+
 }

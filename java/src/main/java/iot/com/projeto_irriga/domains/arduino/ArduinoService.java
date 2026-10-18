@@ -7,25 +7,28 @@ import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import iot.com.projeto_irriga.dto.consumo_agua.ConsumoAguaTotalDTO;
 import iot.com.projeto_irriga.enums.arduino.StatusResposta;
 import iot.com.projeto_irriga.enums.arduino.TiposComandos;
+import iot.com.projeto_irriga.infra.utils.bluetooth.BluetoothSerivce;
 import iot.com.projeto_irriga.infra.utils.bluetooth.BluetoothUtil;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
+@Slf4j
 @Service
 public class ArduinoService {
 
     private final ResponseUtil responseUtil;
     private final ConsumoAguaService consumoAguaService;
+    private final BluetoothSerivce ble;
 
-    //private final BluetoothUtil blServico;
-    ArduinoService(ResponseUtil responseUtil, ConsumoAguaService consumoAguaService){
+    ArduinoService(ResponseUtil responseUtil, ConsumoAguaService consumoAguaService, BluetoothSerivce ble){
         this.responseUtil = responseUtil;
         this.consumoAguaService = consumoAguaService;
-        //this.blServico = blServico;
+        this.ble = ble;
     }
 
     public ApiResponse StatusTotaisArduino(){
@@ -35,11 +38,7 @@ public class ArduinoService {
             return consumosArduino;
         }
 
-        Double umidade = new Double(60);
-        /*
-         SISTEMA PARA PEDIR A UMIDADE AO ARDUINO
-
-        */
+        double umidade = (double) this.ble.solicitarUmidadeSoloArduino().valor();
 
         MonitoramentoStatusArduino monitoramentoStatusArduino = new MonitoramentoStatusArduino((ConsumoAguaTotalDTO) consumosArduino.getDatas(),umidade);
 
@@ -48,22 +47,15 @@ public class ArduinoService {
 
     }
 
-
-    /*private ResponseEntity<ApiResponse> git(ComandoArduino comando) {
-        try {
-
-            RespostaArduino resposta = this.blServico.enviarEEsperarResposta(comando, 3000);
-            if(resposta.status().equals(StatusResposta.OK)) {
-                ApiResponse apiResponse = this.responseUtil.sucess(resposta, resposta.message(), HttpStatus.OK);
-            }
-            ApiResponse apiResponse = this.responseUtil.error(resposta, resposta.message(), HttpStatus.INTERNAL_SERVER_ERROR);
-            return ResponseEntity.status(apiResponse.getStatus()).body(apiResponse);
-
-        } catch (Exception e) {
-            ApiResponse apiResponse = this.responseUtil.error(null, null, HttpStatus.INTERNAL_SERVER_ERROR);
-            return ResponseEntity.status(apiResponse.getStatus()).body(apiResponse);
+    public ApiResponse pingTeste(){
+        RespostaArduino respostaArduino = this.ble.pingTeste();
+        if(respostaArduino.comando().equals("pong")){
+            return  this.responseUtil.sucess(respostaArduino,"Conexão estabelcida com sucesso", HttpStatus.OK);
         }
+        log.error("Conexão com arduino falhou");
+        return this.responseUtil.error(null,"Conexão falhou", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-     */
+
+
 }

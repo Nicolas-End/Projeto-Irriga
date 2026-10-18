@@ -4,9 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum TiposComandos {
-    EXECUTAR("EXECUTAR"),
-    INFORMATIVO("INFORMATIVO");
-
+    COMANDO("comando"),
+    RESPOSTA("resposta");
     private final String tipo ;
     TiposComandos(String tipo){
         this.tipo = tipo;

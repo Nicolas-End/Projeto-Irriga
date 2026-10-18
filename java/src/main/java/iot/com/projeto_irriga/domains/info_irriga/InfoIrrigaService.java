@@ -39,14 +39,12 @@ public class InfoIrrigaService {
     }
 
 
-
-
     public ApiResponse pegarDadosInfoIrriga(){
 
         InfoIrrigaEntity infoIrrigaEntity = this.getFirstInfoIrrigaEntity();
         if(infoIrrigaEntity == null){
 
-            return  this.responseUtil.sucess(null, "informações Não cadastradas", HttpStatus.OK);
+            return  this.responseUtil.error(null, "informações Não cadastradas", HttpStatus.NOT_FOUND);
         }
 
         InfoIrrigaDatasDTO infoIrrigaDatasDTO = new InfoIrrigaDatasDTO(infoIrrigaEntity.getId() ,infoIrrigaEntity.getArduino().getArduinoModel().toString(), infoIrrigaEntity.getUsuario().getEmail(), infoIrrigaEntity.getTipoConfiguacao(),infoIrrigaEntity.getIntervalo(), infoIrrigaEntity.getUmidadeMinima(), infoIrrigaEntity.getDuracaoIrrigacao()) ;
@@ -57,9 +55,7 @@ public class InfoIrrigaService {
     }
 
 
-    public ApiResponse reconfigurarDadosInfoIrriga(
-            InfoIrrigaDatasDTO dto
-    ) {
+    public ApiResponse reconfigurarDadosInfoIrriga(InfoIrrigaDatasDTO dto) {
 
         Optional<InfoIrrigaEntity> optional =
                 this.infoIrrigaRepository.findById(dto.id());
@@ -85,8 +81,6 @@ public class InfoIrrigaService {
                 entity.setIntervalo(
                         dto.intervaloIrrigacao()
                 );
-
-
 
                 ArduinoSchedulers.STOP_IRRIGATION_SCHEDULE();
 
@@ -137,7 +131,7 @@ public class InfoIrrigaService {
 
 
 
-        public InfoIrrigaEntity getFirstInfoIrrigaEntity(){
+    public InfoIrrigaEntity getFirstInfoIrrigaEntity(){
 
         InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaRepository.findFirstByOrderByIdAsc();
 
