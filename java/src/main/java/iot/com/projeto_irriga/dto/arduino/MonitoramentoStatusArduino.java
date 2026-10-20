@@ -1,6 +1,6 @@
 package iot.com.projeto_irriga.dto.arduino;
 
-import iot.com.projeto_irriga.dto.consumo_agua.ConsumoAguaTotalDTO;
+import iot.com.projeto_irriga.dto.consumos.ConsumosTotalDTO;
 
-public record MonitoramentoStatusArduino(ConsumoAguaTotalDTO consumoAgua, Double umidadeSolo) {
+public record MonitoramentoStatusArduino(ConsumosTotalDTO consumoAgua, Double umidadeSolo) {
 }

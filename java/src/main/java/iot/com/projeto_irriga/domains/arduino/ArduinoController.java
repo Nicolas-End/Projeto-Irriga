@@ -1,6 +1,5 @@
 package iot.com.projeto_irriga.domains.arduino;
 
-import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import iot.com.projeto_irriga.infra.utils.scheduler.ArduinoSchedulers;
@@ -17,7 +16,7 @@ public class ArduinoController {
     private final ArduinoService arduinoService;
 
 
-    public ArduinoController( ResponseUtil responseUtil, ArduinoSchedulers arduinoSchedulers, ArduinoService arduinoService) {
+    public ArduinoController( ArduinoService arduinoService) {
         this.arduinoService = arduinoService;
     }
 

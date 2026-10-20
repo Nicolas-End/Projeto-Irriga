@@ -1,9 +1,8 @@
-package iot.com.projeto_irriga.domains.consumo_agua;
+package iot.com.projeto_irriga.domains.consumos;
 
 
 import iot.com.projeto_irriga.domains.bomba.BombaEntity;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaEntity;
-import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaService;
 import iot.com.projeto_irriga.domains.usuario.UsuarioEntity;
 import iot.com.projeto_irriga.enums.info_irriga.TipoConfiguacao;
 import iot.com.projeto_irriga.infra.utils.DateUtil;
@@ -12,25 +11,25 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.boot.autoconfigure.info.ProjectInfoProperties;
 
 import java.util.Date;
 import java.util.UUID;
 
 @Entity
-@Table(name= "tb_consumo_agua")
+@Table(name= "tb_consumos")
 @Getter
 @Setter
 @NoArgsConstructor
-public class ConsumoAguaEntity extends EntityModel {
+public class ConsumosEntity extends EntityModel {
 
-    public ConsumoAguaEntity(Builder builder){
+    public ConsumosEntity(Builder builder){
         this.tempoLigado = builder.tempoLigado;
         this.usuario = builder.usuario;
         this.litrosGastos = builder.litrosGastos;
         this.bomba = builder.bomba;
         this.configuracao = builder.infoIrrigaEntity.getTipoConfiguacao();
         this.date = builder.date;
+        this.wattsUtilizados = builder.wattsUtilizados;
 
     }
 
@@ -41,6 +40,7 @@ public class ConsumoAguaEntity extends EntityModel {
         private final double litrosGastos;
         private final UsuarioEntity usuario;
         private final InfoIrrigaEntity infoIrrigaEntity;
+        private final double wattsUtilizados;
 
 
 
@@ -50,11 +50,12 @@ public class ConsumoAguaEntity extends EntityModel {
             this.litrosGastos = bomba.getVazao() * infoIrrigaEntity.getDuracaoIrrigacao();
             this.usuario = infoIrrigaEntity.getUsuario();
             this.infoIrrigaEntity = infoIrrigaEntity;
+            this.wattsUtilizados = infoIrrigaEntity.getDuracaoIrrigacao() *bomba.getPotenciaEletrica();
 
         }
 
-        public ConsumoAguaEntity  build (){
-            return  new ConsumoAguaEntity(this);
+        public ConsumosEntity build (){
+            return  new ConsumosEntity(this);
         }
 
     }
@@ -63,6 +64,9 @@ public class ConsumoAguaEntity extends EntityModel {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+
+    @Column
+    private double wattsUtilizados;
 
 
     @Column

@@ -1,11 +1,11 @@
-package iot.com.projeto_irriga.domains.consumo_agua;
+package iot.com.projeto_irriga.domains.consumos;
 
 import iot.com.projeto_irriga.domains.bomba.BombaEntity;
 import iot.com.projeto_irriga.domains.bomba.BombaService;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaEntity;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaService;
-import iot.com.projeto_irriga.dto.consumo_agua.ConsumoAguaFormatadoDTO;
-import iot.com.projeto_irriga.dto.consumo_agua.ConsumoAguaTotalDTO;
+import iot.com.projeto_irriga.dto.consumos.ConsumosFormatadoDTO;
+import iot.com.projeto_irriga.dto.consumos.ConsumosTotalDTO;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import jakarta.transaction.Transactional;
@@ -22,31 +22,31 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class ConsumoAguaService {
+public class ConsumosService {
 
     private final ResponseUtil responseUtil;
-    private final ConsumoAguaRepository consumoAguaRepository;
+    private final ConsumosRepository consumosRepository;
     private final InfoIrrigaService infoIrrigaService;
     private final BombaService bombaService;
-    public  ConsumoAguaService(BombaService bombaService,ResponseUtil responseUtil, ConsumoAguaRepository consumoAguaRepository, InfoIrrigaService infoIrrigaService){
+    public ConsumosService(BombaService bombaService, ResponseUtil responseUtil, ConsumosRepository consumosRepository, InfoIrrigaService infoIrrigaService){
         this.responseUtil = responseUtil;
         this.bombaService = bombaService;
         this.infoIrrigaService = infoIrrigaService;
-        this.consumoAguaRepository = consumoAguaRepository;
+        this.consumosRepository = consumosRepository;
     }
 
-    public ApiResponse getConsumoAguaMes() {
+    public ApiResponse getConsumosMes() {
 
         Date inicio = getInicioMes();
         Date fim = getInicioProximoMes();
 
 
-        List<ConsumoAguaEntity> consumos =
-                consumoAguaRepository.findByDateBetween(inicio, fim);
+        List<ConsumosEntity> consumos =
+                consumosRepository.findByDateBetween(inicio, fim);
 
         if (consumos.isEmpty()) {
             return responseUtil.sucess(
-                    new ConsumoAguaTotalDTO(0.0, 0.0, 0, null),
+                    new ConsumosTotalDTO(0.0, 0.0, 0, null, 0.0),
                     "Consumo de agua mes relatado",
                     HttpStatus.OK
             );
@@ -55,8 +55,9 @@ public class ConsumoAguaService {
         double litrosTotais = this.calcularLitrosTotais(consumos);
         double tempoTotal = this.calcularTempoTotal(consumos);
         Date ultimaVezIrrigado = this.calcularUltimaVezIrrigado(consumos);
+        double consumoWatts = this.calcularWattsTotatis(consumos);
         return responseUtil.sucess(
-                new ConsumoAguaTotalDTO(litrosTotais, tempoTotal, consumos.size(), ultimaVezIrrigado),
+                new ConsumosTotalDTO(litrosTotais, tempoTotal, consumos.size(), ultimaVezIrrigado,consumoWatts),
                 "Consumo de agua mes relatado",
                 HttpStatus.OK
         );
@@ -65,14 +66,14 @@ public class ConsumoAguaService {
 
 
     @Transactional
-    public ApiResponse addConsumoAguaPeloEndpoint(){
+    public ApiResponse addConsumoPeloEndpoint(){
         InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaService.getFirstInfoIrrigaEntity();
         BombaEntity bomba = this.bombaService.getFirstBombaEntity();
 
-        ConsumoAguaEntity consumoAguaEntity = new ConsumoAguaEntity.Builder(bomba, infoIrrigaEntity).build();
+        ConsumosEntity consumosEntity = new ConsumosEntity.Builder(bomba, infoIrrigaEntity).build();
 
 
-        this.consumoAguaRepository.save(consumoAguaEntity);
+        this.consumosRepository.save(consumosEntity);
 
         return this.responseUtil.sucess(null,"Irrigação cadastrada com sucesso",HttpStatus.OK);
     }
@@ -84,7 +85,7 @@ public class ConsumoAguaService {
 
 
 
-        List<ConsumoAguaEntity> consumoAguaEntities = new ArrayList<ConsumoAguaEntity>();
+        List<ConsumosEntity> consumoAguaEntities = new ArrayList<ConsumosEntity>();
 
         for(int i =  1; i == vezesIrrigadas; i++){
 
@@ -97,9 +98,9 @@ public class ConsumoAguaService {
     public ApiResponse listarUltimasIrrigacoes(){
 
         Pageable ultimos10 = PageRequest.of(0, 10);
-        List<ConsumoAguaEntity> listaEntity = consumoAguaRepository.findUltimos10(ultimos10);
+        List<ConsumosEntity> listaEntity = consumosRepository.findUltimos10(ultimos10);
 
-        List<ConsumoAguaFormatadoDTO> listaDTO = this.converterConsumoEntityEmDTOFormatado(listaEntity);
+        List<ConsumosFormatadoDTO> listaDTO = this.converterConsumoEntityEmDTOFormatado(listaEntity);
 
         return this.responseUtil.sucess(listaDTO,"Irrigações encontradas", HttpStatus.OK);
     }
@@ -109,9 +110,9 @@ public class ConsumoAguaService {
 
 
 
-    private List<ConsumoAguaFormatadoDTO> converterConsumoEntityEmDTOFormatado(List<ConsumoAguaEntity> entities) {
+    private List<ConsumosFormatadoDTO> converterConsumoEntityEmDTOFormatado(List<ConsumosEntity> entities) {
         return entities.stream()
-                .map(e -> new ConsumoAguaFormatadoDTO(
+                .map(e -> new ConsumosFormatadoDTO(
                         0.0,
                         e.getTempoLigado(),
                         e.getLitrosGastos(),
@@ -153,34 +154,47 @@ public class ConsumoAguaService {
         return calendario.getTime();
     }
     private double calcularLitrosTotais(
-            List<ConsumoAguaEntity> consumos
+            List<ConsumosEntity> consumos
     ) {
 
         double total = 0;
 
-        for (ConsumoAguaEntity consumo : consumos) {
+        for (ConsumosEntity consumo : consumos) {
             total += consumo.getLitrosGastos();
         }
 
         return total;
     }
-    private double calcularTempoTotal(
-            List<ConsumoAguaEntity> consumos
+
+    private double calcularWattsTotatis(
+            List<ConsumosEntity> consumos
     ) {
 
         double total = 0;
 
-        for (ConsumoAguaEntity consumo : consumos) {
+        for (ConsumosEntity consumo : consumos) {
+            total += consumo.getWattsUtilizados();
+        }
+
+        return total;
+    }
+    private double calcularTempoTotal(
+            List<ConsumosEntity> consumos
+    ) {
+
+        double total = 0;
+
+        for (ConsumosEntity consumo : consumos) {
             total += consumo.getTempoLigado();
         }
 
         return total;
     }
 
-    private Date calcularUltimaVezIrrigado( List<ConsumoAguaEntity> consumos    ){
+    private Date calcularUltimaVezIrrigado( List<ConsumosEntity> consumos    ){
         Date date = new Date();
 
-        for(ConsumoAguaEntity consumo : consumos){
+        for(ConsumosEntity consumo : consumos){
             if(consumo.getDate().after(date)){
                 date = consumo.getDate();
             }

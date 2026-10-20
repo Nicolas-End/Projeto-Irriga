@@ -1,8 +1,7 @@
-package iot.com.projeto_irriga.domains.consumo_agua;
+package iot.com.projeto_irriga.domains.consumos;
 
 
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
-import lombok.Getter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,18 +10,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/consumo-agua")
-public class ConsumoAguaController {
+public class ConsumosController {
 
-    private final ConsumoAguaService consumoAguaService;
+    private final ConsumosService consumosService;
 
-    public ConsumoAguaController(ConsumoAguaService consumoAguaService){
-        this.consumoAguaService = consumoAguaService;
+    public ConsumosController(ConsumosService consumosService){
+        this.consumosService = consumosService;
     }
 
 
     @GetMapping("/analytics")
-    public ResponseEntity getConsumoAguaTotal(){
-        ApiResponse response = this.consumoAguaService.getConsumoAguaMes();
+    public ResponseEntity getConsumoTotal(){
+        ApiResponse response = this.consumosService.getConsumosMes();
 
         return ResponseEntity.status(response.getStatus()).body(response);
 
@@ -31,7 +30,7 @@ public class ConsumoAguaController {
     @GetMapping()
     public ResponseEntity pegarRegistrosConsumoAgua(){
 
-        ApiResponse response = this.consumoAguaService.listarUltimasIrrigacoes();
+        ApiResponse response = this.consumosService.listarUltimasIrrigacoes();
 
 
         return ResponseEntity.status(response.getStatus()).body(response);
@@ -40,7 +39,7 @@ public class ConsumoAguaController {
 
     @PostMapping()
     public ResponseEntity registrarNovoConsumoAgua(){
-        ApiResponse response = this.consumoAguaService.addConsumoAguaPeloEndpoint();
+        ApiResponse response = this.consumosService.addConsumoPeloEndpoint();
 
         return ResponseEntity.status(response.getStatus()).body(response);
     }

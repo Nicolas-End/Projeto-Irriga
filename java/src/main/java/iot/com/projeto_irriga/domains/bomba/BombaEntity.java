@@ -33,6 +33,10 @@ public class BombaEntity extends EntityModel {
     @Column(nullable = false)
     private Double pressao;
 
+
+    @Column
+    private Double potenciaEletrica;
+
     @Column
     private ModeloBomba modeloBomba;
 
