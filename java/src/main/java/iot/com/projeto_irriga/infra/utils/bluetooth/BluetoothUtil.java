@@ -51,6 +51,8 @@ public class BluetoothUtil {
     @Value("${ble.response-timeout-ms:5000}")
     private long responseTimeoutMs;
 
+    private static final int TAMANHO_PACOTE_BLE = 20;
+    private static final long INTERVALO_PACOTES_MS = 40;
 
     private DeviceManager deviceManager;
 
@@ -465,6 +467,7 @@ public class BluetoothUtil {
 
             garantirConectado();
 
+            // Descarta qualquer resposta antiga antes de enviar
             filaRespostas.clear();
 
             synchronized (bufferResposta) {
@@ -475,64 +478,57 @@ public class BluetoothUtil {
             // Transformar objeto em JSON
             // ----------------------------------------------------
 
-            String json =
-                    mapper.writeValueAsString(
-                            comando
-                    );
+            String json = mapper.writeValueAsString(comando);
 
-
-            log.info(
-                    "[Arduino BLE] -> {}", json
-            );
-
+            System.out.println("[Arduino BLE] -> " + json);
 
             // ----------------------------------------------------
-            // Enviar JSON para Arduino
+            // Enviar em pacotes de 20 bytes (limite do HM-10)
+            // O Arduino remonta a mensagem contando as chaves { }
             // ----------------------------------------------------
 
-            byte[] dados =
-                    json.getBytes(
-                            StandardCharsets.UTF_8
-                    );
+            byte[] dados = json.getBytes(StandardCharsets.UTF_8);
 
+            for (int i = 0; i < dados.length; i += TAMANHO_PACOTE_BLE) {
 
-            characteristic.writeValue(
-                    dados,
-                    Collections.emptyMap()
-            );
+                byte[] parte = java.util.Arrays.copyOfRange(
+                        dados,
+                        i,
+                        Math.min(i + TAMANHO_PACOTE_BLE, dados.length)
+                );
 
+                characteristic.writeValue(parte, Collections.emptyMap());
+
+                // Dá tempo do HM-10 repassar os bytes para a serial do Arduino
+                if (i + TAMANHO_PACOTE_BLE < dados.length) {
+                    Thread.sleep(INTERVALO_PACOTES_MS);
+                }
+            }
 
             // ----------------------------------------------------
             // Esperar resposta
             // ----------------------------------------------------
 
-            String respostaJson =
-                    filaRespostas.poll(
-                            timeoutMs,
-                            TimeUnit.MILLISECONDS
-                    );
-
+            String respostaJson = filaRespostas.poll(
+                    timeoutMs,
+                    TimeUnit.MILLISECONDS
+            );
 
             if (respostaJson == null) {
-
                 throw new RuntimeException(
-                        "Timeout: Arduino não respondeu em "
-                                + timeoutMs
-                                + " ms"
+                        "Timeout: Arduino não respondeu em " + timeoutMs + " ms"
                 );
             }
-
 
             // ----------------------------------------------------
             // Converter JSON para DTO
             // ----------------------------------------------------
 
-            log.info("[Arduino BLE] JSON recebido para conversão: {}", respostaJson);
-
-            return mapper.readValue(
-                    respostaJson,
-                    RespostaArduino.class
+            System.out.println(
+                    "[Arduino BLE] JSON recebido para conversão: " + respostaJson
             );
+
+            return mapper.readValue(respostaJson, RespostaArduino.class);
 
         } finally {
 

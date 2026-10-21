@@ -26,22 +26,21 @@ public class BluetoothSerivce {
 
     public RespostaArduino pingTeste(){
 
-        return this.enviarComandoArduino("ping", null);
+        RespostaArduino teste = this.enviarComandoArduino("ping", null);
+
+
+        return  teste;
     }
 
 
-    @PostConstruct
     public RespostaArduino configurarArduino(){
         log.info("Configurando Arduino");
         
-        ApiResponse databaseIrrigaDatas = this.infoIrrigaService.pegarDadosInfoIrriga();
+        InfoIrrigaEntity databaseIrrigaDatas = this.infoIrrigaService.getFirstInfoIrrigaEntity();
 
-        if(!databaseIrrigaDatas.getSucess()){
-            return  null;
-        }
 
-        ConfiguracaoArduinoDTO configArduino = this.converterInfoIrrigaDatasEmConfiguracaoArduino((InfoIrrigaEntity) databaseIrrigaDatas.getDatas());
-
+        ConfiguracaoArduinoDTO configArduino = this.converterInfoIrrigaDatasEmConfiguracaoArduino(databaseIrrigaDatas);
+        log.info(configArduino.toString());
         return this.enviarComandoArduino("configurar", configArduino);
 
 
@@ -58,7 +57,7 @@ public class BluetoothSerivce {
     private <T> RespostaArduino enviarComandoArduino (String comando, T valor){
         try {
 
-            ComandoArduino comandoArduino = new ComandoArduino(TiposComandos.COMANDO, comando, valor);
+            ComandoArduino comandoArduino = new ComandoArduino(TiposComandos.comando, comando, valor);
             return this.bluetoothUtil.enviarEEsperarResposta(comandoArduino, 3000);
 
         }catch (Exception e){

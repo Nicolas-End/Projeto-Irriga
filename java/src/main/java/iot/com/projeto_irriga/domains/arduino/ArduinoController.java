@@ -4,6 +4,7 @@ import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import iot.com.projeto_irriga.infra.utils.scheduler.ArduinoSchedulers;
 
+import lombok.Getter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +36,12 @@ public class ArduinoController {
         return ResponseEntity.status(arduinoResponse.getStatus()).body(arduinoResponse);
     }
 
+    @GetMapping("/configurar")
+    public ResponseEntity configurarArduino(){
+        ApiResponse arduinoResponse = this.arduinoService.configuarArduino();
+
+        return ResponseEntity.status(arduinoResponse.getStatus()).body(arduinoResponse);
+    }
 
 
 }

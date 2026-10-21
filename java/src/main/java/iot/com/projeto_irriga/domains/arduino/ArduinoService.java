@@ -44,13 +44,23 @@ public class ArduinoService {
 
     public ApiResponse pingTeste(){
         RespostaArduino respostaArduino = this.ble.pingTeste();
-        if(respostaArduino.comando().equals("pong")){
+
+        if(respostaArduino.valor().equals("pong")){
             return  this.responseUtil.sucess(respostaArduino,"Conexão estabelcida com sucesso", HttpStatus.OK);
         }
         log.error("Conexão com arduino falhou");
+        log.info(respostaArduino.toString());
         return this.responseUtil.error(null,"Conexão falhou", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    public ApiResponse configuarArduino(){
+        RespostaArduino respostaArduino = this.ble.configurarArduino();
+        log.info(respostaArduino.toString());
+        if (respostaArduino.ok()){
+            return this.responseUtil.sucess(respostaArduino, "Arduino configurado com sucesso",HttpStatus.OK);
+        }
+        return this.responseUtil.error(respostaArduino, "Arduino não configurado", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
 
 }
