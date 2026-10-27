@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -82,18 +83,23 @@ public class ConsumosService {
         return this.responseUtil.sucess(null,"Irrigação cadastrada com sucesso",HttpStatus.OK);
     }
 
+    @Transactional
     public ApiResponse addConsumoAguaPeloArduino(int vezesIrrigadas){
+
+        log.info("Cadastrando irrigações no banco de dados");
 
         InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaService.getFirstInfoIrrigaEntity();
         BombaEntity bomba = this.bombaService.getFirstBombaEntity();
+        long umidade = (long) this.ble.solicitarUmidadeSoloArduino().valor();
 
 
 
-        List<ConsumosEntity> consumoAguaEntities = new ArrayList<ConsumosEntity>();
+        List<ConsumosEntity> consumoAguaEntities = IntStream.range(0, vezesIrrigadas)
+                .mapToObj(i -> new ConsumosEntity.Builder(bomba, infoIrrigaEntity, umidade).build())
+                .toList();
 
-        for(int i =  1; i == vezesIrrigadas; i++){
 
-        }
+        this.consumosRepository.saveAll(consumoAguaEntities);
 
         return this.responseUtil.sucess(null,null,null);
 

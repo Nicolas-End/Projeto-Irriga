@@ -31,6 +31,13 @@ public class BluetoothService {
     }
 
 
+    public RespostaArduino verficarVezesIrrigadas(){
+        RespostaArduino arduinoResposta = this.enviarComandoArduino("verificar_vezes_irrigadas", null);
+
+        return arduinoResposta;
+    }
+
+
     public RespostaArduino configurarArduino(){
         log.info("Configurando Arduino");
         

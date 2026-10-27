@@ -34,7 +34,7 @@ public class InfoIrrigaService {
 
         InfoIrrigaEntity entity = this.getFirstInfoIrrigaEntity();
 
-        ArduinoSchedulers.SET_IRRIGATION_SCHEDULE((long) entity.getIntervalo(), TimeUnit.MINUTES);
+        ArduinoSchedulers.SET_IRRIGATION_SCHEDULE((long) entity.getIntervalo() + 10, TimeUnit.SECONDS);
 
         return;
     }
