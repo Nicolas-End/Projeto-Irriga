@@ -1,17 +1,16 @@
 package iot.com.projeto_irriga.domains.info_irriga;
 
+import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import iot.com.projeto_irriga.dto.info_irriga.InfoIrrigaDatasDTO;
+import iot.com.projeto_irriga.infra.utils.bluetooth.BluetoothService;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import iot.com.projeto_irriga.infra.utils.scheduler.ArduinoSchedulers;
 import jakarta.annotation.PostConstruct;
-import org.aspectj.weaver.ResolvedPointcutDefinition;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -20,11 +19,13 @@ public class InfoIrrigaService {
     private final InfoIrrigaRepository infoIrrigaRepository;
     private final ResponseUtil responseUtil;
     private final ArduinoSchedulers arduinoSchedulers;
+    private final BluetoothService ble;
 
-    public InfoIrrigaService (InfoIrrigaRepository infoIrrigaRepository, ResponseUtil responseUtil,ArduinoSchedulers arduinoSchedulers){
+    public InfoIrrigaService (BluetoothService ble  , InfoIrrigaRepository infoIrrigaRepository, ResponseUtil responseUtil, ArduinoSchedulers arduinoSchedulers){
         this.infoIrrigaRepository = infoIrrigaRepository;
         this.responseUtil = responseUtil;
         this.arduinoSchedulers = arduinoSchedulers;
+        this.ble = ble;
     }
 
 
@@ -119,15 +120,28 @@ public class InfoIrrigaService {
             entity.setIrrigaPorIntervalo(false);
         }
 
-        this.infoIrrigaRepository.save(entity);
+        InfoIrrigaEntity infoEntity = this.infoIrrigaRepository.save(entity);
 
         return this.responseUtil.sucess(
-                null,
+                infoEntity,
                 "Dados atualizados com sucesso",
                 HttpStatus.OK
         );
     }
 
+    public  ApiResponse reconfiguraDadosIrrigacaoArduino(InfoIrrigaEntity infoEntity){
+        RespostaArduino respostaArduino = this.ble.configurarArduinoComEntidade(infoEntity);
+
+        if(respostaArduino.ok()){
+            return this.responseUtil.sucess(
+                    null,
+                    "Dados atualizados com sucesso",
+                    HttpStatus.OK
+            );
+        }
+        return this.responseUtil.error(respostaArduino.valor(),"Arduino não respondeu a configuração"
+                ,HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
 
 

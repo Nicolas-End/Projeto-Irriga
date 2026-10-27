@@ -34,11 +34,18 @@ public class InfoIrrigaController {
     public <T> ResponseEntity setIrrigaConfig(@RequestBody InfoIrrigaDatasDTO infoIrrigaDatasDTO){
 
 
-       ApiResponse response =  this.infoIrrigaService.reconfigurarDadosInfoIrriga(infoIrrigaDatasDTO);
+       ApiResponse respostaBancoDados =  this.infoIrrigaService.reconfigurarDadosInfoIrriga(infoIrrigaDatasDTO);
+
+       if(respostaBancoDados.getSucess()){
+            ApiResponse resposta =  this.infoIrrigaService.reconfiguraDadosIrrigacaoArduino((InfoIrrigaEntity)respostaBancoDados.getDatas());
+
+            return ResponseEntity.status(resposta.getStatus()).body(resposta); 
+       }
 
 
 
-        return ResponseEntity.status(response.getStatus()).body(response);
+
+        return ResponseEntity.status(respostaBancoDados.getStatus()).body(respostaBancoDados);
 
 
     }

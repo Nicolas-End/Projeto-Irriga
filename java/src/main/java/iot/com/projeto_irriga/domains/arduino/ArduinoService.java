@@ -4,7 +4,7 @@ import iot.com.projeto_irriga.domains.consumos.ConsumosService;
 import iot.com.projeto_irriga.dto.arduino.MonitoramentoStatusArduino;
 import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import iot.com.projeto_irriga.dto.consumos.ConsumosTotalDTO;
-import iot.com.projeto_irriga.infra.utils.bluetooth.BluetoothSerivce;
+import iot.com.projeto_irriga.infra.utils.bluetooth.BluetoothService;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -18,9 +18,9 @@ public class ArduinoService {
 
     private final ResponseUtil responseUtil;
     private final ConsumosService consumosService;
-    private final BluetoothSerivce ble;
+    private final BluetoothService ble;
 
-    ArduinoService(ResponseUtil responseUtil, ConsumosService consumosService, BluetoothSerivce ble){
+    ArduinoService(ResponseUtil responseUtil, ConsumosService consumosService, BluetoothService ble){
         this.responseUtil = responseUtil;
         this.consumosService = consumosService;
         this.ble = ble;

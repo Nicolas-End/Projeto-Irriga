@@ -6,6 +6,7 @@ import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaEntity;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaService;
 import iot.com.projeto_irriga.dto.consumos.ConsumosFormatadoDTO;
 import iot.com.projeto_irriga.dto.consumos.ConsumosTotalDTO;
+import iot.com.projeto_irriga.infra.utils.bluetooth.BluetoothService;
 import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import jakarta.transaction.Transactional;
@@ -28,9 +29,11 @@ public class ConsumosService {
     private final ConsumosRepository consumosRepository;
     private final InfoIrrigaService infoIrrigaService;
     private final BombaService bombaService;
-    public ConsumosService(BombaService bombaService, ResponseUtil responseUtil, ConsumosRepository consumosRepository, InfoIrrigaService infoIrrigaService){
+    private final BluetoothService ble;
+    public ConsumosService( BluetoothService ble ,BombaService bombaService, ResponseUtil responseUtil, ConsumosRepository consumosRepository, InfoIrrigaService infoIrrigaService){
         this.responseUtil = responseUtil;
         this.bombaService = bombaService;
+        this.ble = ble;
         this.infoIrrigaService = infoIrrigaService;
         this.consumosRepository = consumosRepository;
     }
@@ -69,8 +72,9 @@ public class ConsumosService {
     public ApiResponse addConsumoPeloEndpoint(){
         InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaService.getFirstInfoIrrigaEntity();
         BombaEntity bomba = this.bombaService.getFirstBombaEntity();
+        long umidade = (long) this.ble.solicitarUmidadeSoloArduino().valor();
 
-        ConsumosEntity consumosEntity = new ConsumosEntity.Builder(bomba, infoIrrigaEntity).build();
+        ConsumosEntity consumosEntity = new ConsumosEntity.Builder(bomba, infoIrrigaEntity,umidade).build();
 
 
         this.consumosRepository.save(consumosEntity);
