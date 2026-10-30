@@ -11,6 +11,7 @@ const ENDPOINT = '/arduino/status';
 
 // Formato "limpo" usado pela tela
 export type StatusArduino = {
+  consumoEnergico:number;
   consumoAguaLitros: number;
   tempoLigadoMinutos: number;
   quantidadeIrrigacoes: number;
@@ -26,6 +27,7 @@ type RespostaApi = {
       tempoLigadoTotal: number;
       quantidadeVezesLigada: number;
       ultimaVezIrrigado: string | null;
+      consumoEnergico:number;
     };
     umidadeSolo: number;
   };
@@ -58,6 +60,8 @@ export async function buscarStatusArduino(): Promise<
       sucesso: true,
       mensagem: data.message,
       dados: {
+
+        consumoEnergico: consumoAgua.consumoEnergico,
         // ASSUMIDO: consumoTotal em litros
         consumoAguaLitros: consumoAgua.consumoTotal,
 

@@ -235,7 +235,7 @@ export default function MediaScreen() {
               </View>
             </View>
 
-            <Text style={styles.value}>18,4 kWh</Text>
+            <Text style={styles.value}>{status.consumoEnergico} W</Text>
           </View>
 
           {/* Tempo ligado (API) */}

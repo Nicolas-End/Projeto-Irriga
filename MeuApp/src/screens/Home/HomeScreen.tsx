@@ -16,9 +16,9 @@ import { styles } from './styles';
 // ajuste o caminho conforme onde você colocar o service
 import {
   buscarConfiguracao,
-  salvarConfiguracao,
   ModoIrrigacao,
-} from '@/screens/Home/api'
+  salvarConfiguracao,
+} from '@/screens/Home/api';
 
 /* ------------------------------------------------------------------ */
 /* PRESETS DOS MODOS FIXOS                                             */
@@ -440,7 +440,7 @@ export default function HomeScreen() {
                 title="🔁 Intervalo entre irrigações"
                 description="Tempo mínimo de espera entre uma irrigação e outra:"
                 value={interval}
-                unit="min"
+                unit="seg"
                 editable={isEditable}
                 onChange={setInterval}
                 onStep={(amount) => changeValue(interval, setInterval, amount)}
@@ -450,7 +450,7 @@ export default function HomeScreen() {
                 title="⏱️ Duração da irrigação"
                 description="Durante quanto tempo o sistema irá irrigar:"
                 value={irrigationTime}
-                unit="min"
+                unit="seg"
                 editable={isEditable}
                 onChange={setIrrigationTime}
                 onStep={(amount) =>
