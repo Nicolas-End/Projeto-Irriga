@@ -8,6 +8,7 @@ import iot.com.projeto_irriga.dto.arduino.ConfiguracaoArduinoDTO;
 import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import iot.com.projeto_irriga.enums.arduino.TiposComandos;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 
@@ -17,7 +18,7 @@ public class BluetoothService {
     private final BluetoothUtil bluetoothUtil;
     private final InfoIrrigaService infoIrrigaService;
 
-    public BluetoothService(BluetoothUtil bluetoothUtil, InfoIrrigaService infoIrrigaService){
+    public BluetoothService(BluetoothUtil bluetoothUtil, @Lazy InfoIrrigaService infoIrrigaService){
         this.bluetoothUtil = bluetoothUtil;
         this.infoIrrigaService = infoIrrigaService;
     }

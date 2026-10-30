@@ -39,7 +39,7 @@ public class ConsumosController {
 
     @PostMapping()
     public ResponseEntity registrarNovoConsumoAgua(){
-        ApiResponse response = this.consumosService.addConsumoPeloEndpoint();
+        ApiResponse response = this.consumosService.addConsumoAguaPeloArduino(2);
 
         return ResponseEntity.status(response.getStatus()).body(response);
     }

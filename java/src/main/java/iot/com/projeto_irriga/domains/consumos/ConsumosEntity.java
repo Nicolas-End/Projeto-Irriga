@@ -29,6 +29,7 @@ public class ConsumosEntity extends EntityModel {
         this.bomba = builder.bomba;
         this.configuracao = builder.infoIrrigaEntity.getTipoConfiguacao();
         this.date = builder.date;
+        this.umidadeSolo = builder.umidadeSolo;
         this.wattsUtilizados = builder.wattsUtilizados;
 
     }
@@ -41,14 +42,14 @@ public class ConsumosEntity extends EntityModel {
         private final UsuarioEntity usuario;
         private final InfoIrrigaEntity infoIrrigaEntity;
         private final double wattsUtilizados;
-        private final double umidadeSolo;
+        private final int umidadeSolo;
 
 
 
-        public Builder( BombaEntity bomba, InfoIrrigaEntity infoIrrigaEntity, long umidade){
+        public Builder( BombaEntity bomba, InfoIrrigaEntity infoIrrigaEntity, int umidade){
             this.tempoLigado = infoIrrigaEntity.getDuracaoIrrigacao();
             this.bomba = bomba;
-            this.umidadeSolo = (double) umidade;
+            this.umidadeSolo =  umidade;
             this.litrosGastos = bomba.getVazao() * infoIrrigaEntity.getDuracaoIrrigacao();
             this.usuario = infoIrrigaEntity.getUsuario();
             this.infoIrrigaEntity = infoIrrigaEntity;
@@ -79,7 +80,7 @@ public class ConsumosEntity extends EntityModel {
     private BombaEntity bomba;
 
     @Column
-    private Double umidadeSolo;
+    private int umidadeSolo;
 
     @Column
     private Date date ;

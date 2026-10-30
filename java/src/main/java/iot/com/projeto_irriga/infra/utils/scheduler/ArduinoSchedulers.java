@@ -8,6 +8,7 @@ import iot.com.projeto_irriga.infra.utils.bluetooth.BluetoothUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +26,7 @@ public class ArduinoSchedulers {
     private static BluetoothService BLE;
     private static ConsumosService CONSUMOS;
 
-    public ArduinoSchedulers(BluetoothService bluetoothService, ConsumosService consumosService){
+    public ArduinoSchedulers(BluetoothService bluetoothService, @Lazy ConsumosService consumosService){
         BLE = bluetoothService;
         CONSUMOS = consumosService;
     }
@@ -47,7 +48,9 @@ public class ArduinoSchedulers {
             log.info("Verificando Irrigação");
 
             RespostaArduino resposta = BLE.verficarVezesIrrigadas();
-            if(resposta.ok() && (int) resposta.valor() <= 0){
+            log.info(resposta.toString());
+            if(resposta.ok() && (int) resposta.valor() >= 0){
+                log.info("Aqui");
                 CONSUMOS.addConsumoAguaPeloArduino((int) resposta.valor());
             }
 

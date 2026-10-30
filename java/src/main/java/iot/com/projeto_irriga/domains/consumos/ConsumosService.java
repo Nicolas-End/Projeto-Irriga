@@ -4,6 +4,7 @@ import iot.com.projeto_irriga.domains.bomba.BombaEntity;
 import iot.com.projeto_irriga.domains.bomba.BombaService;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaEntity;
 import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaService;
+import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import iot.com.projeto_irriga.dto.consumos.ConsumosFormatadoDTO;
 import iot.com.projeto_irriga.dto.consumos.ConsumosTotalDTO;
 import iot.com.projeto_irriga.infra.utils.bluetooth.BluetoothService;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -73,9 +75,9 @@ public class ConsumosService {
     public ApiResponse addConsumoPeloEndpoint(){
         InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaService.getFirstInfoIrrigaEntity();
         BombaEntity bomba = this.bombaService.getFirstBombaEntity();
-        long umidade = (long) this.ble.solicitarUmidadeSoloArduino().valor();
+        int umidade = (int) this.ble.solicitarUmidadeSoloArduino().valor();
 
-        ConsumosEntity consumosEntity = new ConsumosEntity.Builder(bomba, infoIrrigaEntity,umidade).build();
+        ConsumosEntity consumosEntity = new ConsumosEntity.Builder(bomba, infoIrrigaEntity, umidade).build();
 
 
         this.consumosRepository.save(consumosEntity);
@@ -84,25 +86,38 @@ public class ConsumosService {
     }
 
     @Transactional
-    public ApiResponse addConsumoAguaPeloArduino(int vezesIrrigadas){
+    public ApiResponse addConsumoAguaPeloArduino(int vezesIrrigadas) {
 
-        log.info("Cadastrando irrigações no banco de dados");
+        // Nada a registrar: evita consultas ao banco e ao Arduino à toa
+        if (vezesIrrigadas <= 0) {
+            return this.responseUtil.sucess(null, null, null);
+        }
 
-        InfoIrrigaEntity infoIrrigaEntity = this.infoIrrigaService.getFirstInfoIrrigaEntity();
+        log.info("Cadastrando {} irrigação(ões) no banco de dados", vezesIrrigadas);
+
+        InfoIrrigaEntity infoIrriga = this.infoIrrigaService.getFirstInfoIrrigaEntity();
         BombaEntity bomba = this.bombaService.getFirstBombaEntity();
-        long umidade = (long) this.ble.solicitarUmidadeSoloArduino().valor();
 
+        // Leitura segura da umidade devolvida pelo Arduino
+        RespostaArduino resposta = this.ble.solicitarUmidadeSoloArduino();
 
+        if (resposta == null || !(resposta.valor() instanceof Number numero)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Não foi possível ler a umidade do solo no Arduino");
+        }
 
-        List<ConsumosEntity> consumoAguaEntities = IntStream.range(0, vezesIrrigadas)
-                .mapToObj(i -> new ConsumosEntity.Builder(bomba, infoIrrigaEntity, umidade).build())
+        int umidade = numero.intValue();
+
+        List<ConsumosEntity> consumos = IntStream.range(0, vezesIrrigadas)
+                .mapToObj(i -> new ConsumosEntity.Builder(bomba, infoIrriga, umidade).build())
                 .toList();
 
+        this.consumosRepository.saveAll(consumos);
 
-        this.consumosRepository.saveAll(consumoAguaEntities);
+        log.info("{} consumo(s) registrado(s)", consumos.size());
 
-        return this.responseUtil.sucess(null,null,null);
-
+        return this.responseUtil.sucess(null, null, null);
     }
 
     public ApiResponse listarUltimasIrrigacoes(){
@@ -123,7 +138,7 @@ public class ConsumosService {
     private List<ConsumosFormatadoDTO> converterConsumoEntityEmDTOFormatado(List<ConsumosEntity> entities) {
         return entities.stream()
                 .map(e -> new ConsumosFormatadoDTO(
-                        0.0,
+                        (int) e.getUmidadeSolo(),
                         e.getTempoLigado(),
                         e.getLitrosGastos(),
                         e.getConfiguracao(),
@@ -183,6 +198,7 @@ public class ConsumosService {
         double total = 0;
 
         for (ConsumosEntity consumo : consumos) {
+
             total += consumo.getWattsUtilizados();
         }
 

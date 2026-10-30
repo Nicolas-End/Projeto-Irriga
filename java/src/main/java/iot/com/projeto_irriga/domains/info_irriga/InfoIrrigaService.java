@@ -7,12 +7,14 @@ import iot.com.projeto_irriga.infra.utils.model.response.ApiResponse;
 import iot.com.projeto_irriga.infra.utils.model.response.ResponseUtil;
 import iot.com.projeto_irriga.infra.utils.scheduler.ArduinoSchedulers;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class InfoIrrigaService {
 
@@ -85,7 +87,7 @@ public class InfoIrrigaService {
 
                 ArduinoSchedulers.STOP_IRRIGATION_SCHEDULE();
 
-                ArduinoSchedulers.SET_IRRIGATION_SCHEDULE((long) entity.getIntervalo(),TimeUnit.MINUTES);
+                ArduinoSchedulers.SET_IRRIGATION_SCHEDULE((long) entity.getIntervalo(),TimeUnit.SECONDS);
 
                 entity.setIrrigaPorIntervalo(true);
 
@@ -131,6 +133,7 @@ public class InfoIrrigaService {
 
     public  ApiResponse reconfiguraDadosIrrigacaoArduino(InfoIrrigaEntity infoEntity){
         RespostaArduino respostaArduino = this.ble.configurarArduinoComEntidade(infoEntity);
+        log.info(respostaArduino.toString());
 
         if(respostaArduino.ok()){
             return this.responseUtil.sucess(

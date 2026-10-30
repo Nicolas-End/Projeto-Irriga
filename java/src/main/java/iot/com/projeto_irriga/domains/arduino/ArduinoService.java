@@ -1,6 +1,7 @@
 package iot.com.projeto_irriga.domains.arduino;
 
 import iot.com.projeto_irriga.domains.consumos.ConsumosService;
+import iot.com.projeto_irriga.domains.info_irriga.InfoIrrigaService;
 import iot.com.projeto_irriga.dto.arduino.MonitoramentoStatusArduino;
 import iot.com.projeto_irriga.dto.arduino.RespostaArduino;
 import iot.com.projeto_irriga.dto.consumos.ConsumosTotalDTO;
@@ -18,10 +19,12 @@ public class ArduinoService {
 
     private final ResponseUtil responseUtil;
     private final ConsumosService consumosService;
+    private final InfoIrrigaService infoIrrigaService;
     private final BluetoothService ble;
 
-    ArduinoService(ResponseUtil responseUtil, ConsumosService consumosService, BluetoothService ble){
+    ArduinoService( InfoIrrigaService infoIrrigaService ,ResponseUtil responseUtil, ConsumosService consumosService, BluetoothService ble){
         this.responseUtil = responseUtil;
+        this.infoIrrigaService = infoIrrigaService;
         this.consumosService = consumosService;
         this.ble = ble;
     }
@@ -33,8 +36,7 @@ public class ArduinoService {
             return consumosArduino;
         }
 
-        double umidade = (double) this.ble.solicitarUmidadeSoloArduino().valor();
-
+        int umidade = (int) this.ble.solicitarUmidadeSoloArduino().valor();
         MonitoramentoStatusArduino monitoramentoStatusArduino = new MonitoramentoStatusArduino((ConsumosTotalDTO) consumosArduino.getDatas(),umidade);
 
         return this.responseUtil.sucess(monitoramentoStatusArduino,"Status do Arduino Encontrado", HttpStatus.OK);
@@ -55,6 +57,7 @@ public class ArduinoService {
 
     public ApiResponse configuarArduino(){
         RespostaArduino respostaArduino = this.ble.configurarArduino();
+        this.infoIrrigaService.configurarSchedulerIrrigacao();
         log.info(respostaArduino.toString());
         if (respostaArduino.ok()){
             return this.responseUtil.sucess(respostaArduino, "Arduino configurado com sucesso",HttpStatus.OK);

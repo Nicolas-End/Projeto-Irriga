@@ -252,7 +252,7 @@ public class BluetoothUtil {
                         System.currentTimeMillis() < limite
         ) {
 
-            Thread.sleep(300);
+            Thread.sleep(3000);
 
             service =
                     buscarServico(
